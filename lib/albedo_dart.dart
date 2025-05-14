@@ -95,6 +95,9 @@ class Query {
     List<dynamic>? oneof,
     (dynamic, dynamic)? between,
   }) {
+    if (query['query'] == null) {
+      query['query'] = {};
+    }
     if (eq != null) {
       query['query'][field] = {r'$eq': eq};
     }
