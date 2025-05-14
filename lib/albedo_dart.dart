@@ -96,28 +96,28 @@ class Query {
     (dynamic, dynamic)? between,
   }) {
     if (eq != null) {
-      query[field] = eq;
+      query['query'][field] = {r'$eq': eq};
     }
     if (gt != null) {
-      query[field] = {r'$gt': gt};
+      query['query'][field] = {r'$gt': gt};
     }
     if (ne != null) {
-      query[field] = {r'$ne': ne};
+      query['query'][field] = {r'$ne': ne};
     }
     if (lt != null) {
-      query[field] = {r'$lt': lt};
+      query['query'][field] = {r'$lt': lt};
     }
     if (gte != null) {
-      query[field] = {r'$gte': gte};
+      query['query'][field] = {r'$gte': gte};
     }
     if (lte != null) {
-      query[field] = {r'$lte': lte};
+      query['query'][field] = {r'$lte': lte};
     }
     if (oneof != null) {
-      query[field] = {r'$in': oneof};
+      query['query'][field] = {r'$in': oneof};
     }
     if (between != null) {
-      query[field] = {
+      query['query'][field] = {
         r'$between': [between.$1, between.$2],
       };
     }
