@@ -226,7 +226,7 @@ class Bucket {
   }
 
   Map<String, dynamic>? get(Query query) {
-    final serializedDocc = BsonCodec.serialize(query).byteList;
+    final serializedDocc = BsonCodec.serialize(query.query).byteList;
     Pointer<Uint8> serializedDocPtr = malloc<Uint8>(serializedDocc.length);
     serializedDocPtr
         .asTypedList(serializedDocc.length)
@@ -266,6 +266,18 @@ class Bucket {
 
     _bindings.albedo_close_iterator(listHandle);
     return doc;
+  }
+
+  // Relies on _id field to be unique
+  void update(
+    Query query,
+    Map<String, dynamic> Function(Map<String, dynamic> inDoc) updater,
+  ) {
+    for (var doc in list(query)) {
+      delete(where("id", eq: doc['_id']));
+      final updatedDoc = updater(doc);
+      insert(updatedDoc);
+    }
   }
 
   void delete(Query query) {

@@ -1,7 +1,6 @@
-name: albedo_dart
-description: "A new Flutter FFI plugin project."
+name: albedo_flutter
+description: "Albedo db bindings."
 version: 0.0.1
-homepage:
 
 environment:
   sdk: ^3.7.0
