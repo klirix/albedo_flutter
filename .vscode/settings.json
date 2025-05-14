@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.heex": "phoenix-heex",
+    "albedo_dart.h": "c"
+  }
+}
