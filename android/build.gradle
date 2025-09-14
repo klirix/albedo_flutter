@@ -27,7 +27,7 @@ apply plugin: "com.android.library"
 android {
     namespace = "com.example.albedo_dart"
 
-    compileSdk = 36
+    compileSdk = 35
 
     ndkVersion = android.ndkVersion
 

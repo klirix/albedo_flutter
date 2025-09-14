@@ -1,8 +1,7 @@
+import 'package:albedo_flutter/albedo_dart.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:path_provider/path_provider.dart';
-
-import 'package:albedo_dart/albedo_dart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,7 +22,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    getApplicationDocumentsDirectory().then((dir) {
+    getApplicationSupportDirectory().then((dir) {
       users = Bucket.open('${dir.path}/albedo_test.bucket');
     });
     sumResult = Bucket.version();
@@ -50,13 +49,8 @@ class _MyAppState extends State<MyApp> {
                 spacerSmall,
                 ElevatedButton(
                   onPressed: () {
-                    users.insert({"name": "test", "value": 1});
-                    var res = users.list(
-                      where("name", eq: "test")
-                          .where("value", between: (4, 5))
-                          .where("age", oneof: [18, 19, 20]),
-                      // .limit(1),
-                    );
+                    // users.insert({"name": "test", "value": 1});
+                    var res = users.list(where("name", eq: "test").limit(2));
                     print("docs: ${List.from(res)}");
                   },
                   child: Text("List documents"),
@@ -66,6 +60,13 @@ class _MyAppState extends State<MyApp> {
                     users.insert({"name": "test", "value": 1});
                   },
                   child: Text("Insert garbage documents"),
+                ),
+
+                ElevatedButton(
+                  onPressed: () {
+                    users.delete(Query());
+                  },
+                  child: Text("Delete"),
                 ),
                 Text(
                   'sum(1, 2) = $sumResult',
