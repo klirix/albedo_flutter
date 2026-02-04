@@ -1,0 +1,3 @@
+[submodule "albedo"]
+	path = albedo
+	url = git@github.com:klirix/albedo.git
