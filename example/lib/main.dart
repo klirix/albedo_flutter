@@ -24,6 +24,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     getApplicationSupportDirectory().then((dir) {
       users = Bucket.open('${dir.path}/albedo_test.bucket');
+      users.ensureIndex("timestamp", reverse: true);
     });
     sumResult = Bucket.version();
   }
@@ -50,16 +51,35 @@ class _MyAppState extends State<MyApp> {
                 ElevatedButton(
                   onPressed: () {
                     // users.insert({"name": "test", "value": 1});
-                    var res = users.list(where("name", eq: "test").limit(2));
-                    print("docs: ${List.from(res)}");
+                    final timeNow = DateTime.now().millisecondsSinceEpoch;
+                    var res = users.list(
+                      Query().sort(desc: "timestamp").limit(2),
+                    );
+
+                    final delta =
+                        DateTime.now().millisecondsSinceEpoch - timeNow;
+
+                    print("docs: ${List.from(res)}, in: $delta ms");
                   },
                   child: Text("List documents"),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    users.insert({"name": "test", "value": 1});
+                    users.insert({
+                      "name": "test",
+                      "value": 1,
+                      "timestamp": DateTime.now(),
+                    });
                   },
                   child: Text("Insert garbage documents"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    users.update(where("name", eq: "test"), (inDoc) {
+                      return {...inDoc, "name": "test2"};
+                    });
+                  },
+                  child: Text("Transform garbage documents"),
                 ),
 
                 ElevatedButton(

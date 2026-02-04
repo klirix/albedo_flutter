@@ -271,16 +271,105 @@ class Bucket {
     return doc;
   }
 
-  // Relies on _id field to be unique
   void update(
     Query query,
     Map<String, dynamic> Function(Map<String, dynamic> inDoc) updater,
   ) {
-    for (var doc in list(query)) {
-      delete(where("id", eq: doc['_id']));
-      final updatedDoc = updater(doc);
-      insert(updatedDoc);
+    final serializedQuery = BsonCodec.serialize(query.query).byteList;
+    Pointer<Uint8> serializedQueryPtr = _bindings.albedo_malloc(
+      serializedQuery.length,
+    );
+    serializedQueryPtr
+        .asTypedList(serializedQuery.length)
+        .setAll(0, serializedQuery);
+
+    Pointer<Int64> out = _bindings.albedo_malloc(8).cast();
+    Pointer<Uint64> outDoc = _bindings.albedo_malloc(8).cast();
+    AlbedoTransformIterator iterator = Pointer.fromAddress(0);
+
+    try {
+      final transformRes = _bindings.albedo_transform(
+        _handle,
+        serializedQueryPtr,
+        out as Pointer<AlbedoTransformIterator>,
+      );
+
+      if (transformRes > 1) {
+        throw Exception('Error creating transform iterator: $transformRes');
+      }
+
+      iterator = Pointer.fromAddress(out.value) as AlbedoTransformIterator;
+
+      while (true) {
+        final res = _bindings.albedo_transform_data(
+          iterator,
+          outDoc as Pointer<Pointer<Uint8>>,
+        );
+
+        if (res == ALBEDO_EOS) {
+          break;
+        }
+
+        if (res > 1) {
+          throw Exception('Error reading transform data: $res');
+        }
+
+        final dataPtr = Pointer.fromAddress(outDoc.value) as Pointer<Uint8>;
+        final size = dataPtr.cast<Uint32>().value;
+        final data = dataPtr.asTypedList(size);
+        final doc = BsonCodec.deserialize(BsonBinary.from(data));
+
+        final updatedDoc = updater(doc);
+        final updatedBuffer = BsonCodec.serialize(updatedDoc).byteList;
+        final updatedPtr = _bindings.albedo_malloc(updatedBuffer.length);
+        updatedPtr.asTypedList(updatedBuffer.length).setAll(0, updatedBuffer);
+
+        try {
+          final applyRes = _bindings.albedo_transform_apply(
+            iterator,
+            updatedPtr,
+          );
+          if (applyRes > 1) {
+            throw Exception('Error applying transform: $applyRes');
+          }
+        } finally {
+          _bindings.albedo_free(updatedPtr, updatedBuffer.length);
+        }
+      }
+    } finally {
+      if (iterator.address != 0) {
+        _bindings.albedo_transform_close(iterator);
+      }
+      _bindings.albedo_free(serializedQueryPtr, serializedQuery.length);
+      _bindings.albedo_free(out.cast(), 8);
+      _bindings.albedo_free(outDoc.cast(), 8);
     }
+  }
+
+  int ensureIndex(
+    String path, {
+    bool unique = false,
+    bool sparse = false,
+    bool reverse = false,
+  }) {
+    final optionsByte =
+        (unique ? 1 : 0) | ((sparse ? 1 : 0) << 1) | ((reverse ? 1 : 0) << 2);
+
+    final pathPtr = path.toNativeUtf8();
+    final res = _bindings.albedo_ensure_index(
+      _handle,
+      pathPtr.cast<Char>(),
+      optionsByte,
+    );
+    malloc.free(pathPtr);
+    return res;
+  }
+
+  int dropIndex(String path) {
+    final pathPtr = path.toNativeUtf8();
+    final res = _bindings.albedo_drop_index(_handle, pathPtr.cast<Char>());
+    malloc.free(pathPtr);
+    return res;
   }
 
   void delete(Query query) {
@@ -303,82 +392,3 @@ class Bucket {
     return version;
   }
 }
-
-// /// A request to compute `sum`.
-// ///
-// /// Typically sent from one isolate to another.
-// class _SumRequest {
-//   final int id;
-//   final int a;
-//   final int b;
-
-//   const _SumRequest(this.id, this.a, this.b);
-// }
-
-// /// A response with the result of `sum`.
-// ///
-// /// Typically sent from one isolate to another.
-// class _SumResponse {
-//   final int id;
-//   final int result;
-
-//   const _SumResponse(this.id, this.result);
-// }
-
-// /// Counter to identify [_SumRequest]s and [_SumResponse]s.
-// int _nextSumRequestId = 0;
-
-// /// Mapping from [_SumRequest] `id`s to the completers corresponding to the correct future of the pending request.
-// final Map<int, Completer<int>> _sumRequests = <int, Completer<int>>{};
-
-// /// The SendPort belonging to the helper isolate.
-// Future<SendPort> _helperIsolateSendPort = () async {
-//   // The helper isolate is going to send us back a SendPort, which we want to
-//   // wait for.
-//   final Completer<SendPort> completer = Completer<SendPort>();
-
-//   // Receive port on the main isolate to receive messages from the helper.
-//   // We receive two types of messages:
-//   // 1. A port to send messages on.
-//   // 2. Responses to requests we sent.
-//   final ReceivePort receivePort =
-//       ReceivePort()..listen((dynamic data) {
-//         if (data is SendPort) {
-//           // The helper isolate sent us the port on which we can sent it requests.
-//           completer.complete(data);
-//           return;
-//         }
-//         if (data is _SumResponse) {
-//           // The helper isolate sent us a response to a request we sent.
-//           final Completer<int> completer = _sumRequests[data.id]!;
-//           _sumRequests.remove(data.id);
-//           completer.complete(data.result);
-//           return;
-//         }
-//         throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
-//       });
-
-//   // Start the helper isolate.
-//   await Isolate.spawn((SendPort sendPort) async {
-//     final ReceivePort helperReceivePort =
-//         ReceivePort()..listen((dynamic data) {
-//           // On the helper isolate listen to requests and respond to them.
-//           if (data is _SumRequest) {
-//             final int result = _bindings.sum_long_running(data.a, data.b);
-//             final _SumResponse response = _SumResponse(data.id, result);
-//             sendPort.send(response);
-//             return;
-//           }
-//           throw UnsupportedError(
-//             'Unsupported message type: ${data.runtimeType}',
-//           );
-//         });
-
-//     // Send the port to the main isolate on which we can receive requests.
-//     sendPort.send(helperReceivePort.sendPort);
-//   }, receivePort.sendPort);
-
-//   // Wait until the helper isolate has sent us back the SendPort on which we
-//   // can start sending requests.
-//   return completer.future;
-// }();
