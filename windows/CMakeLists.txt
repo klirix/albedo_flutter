@@ -19,5 +19,15 @@ set(albedo_dart_bundled_libraries
   # Defined in ../src/CMakeLists.txt.
   # This can be changed to accommodate different builds.
   $<TARGET_FILE:albedo_dart>
+  "${CMAKE_CURRENT_SOURCE_DIR}/albedo.dll"
+  PARENT_SCOPE
+)
+
+# Also append to the global plugin bundle list so the app copies the DLL next to
+# its executable without touching the app's build scripts.
+set(PLUGIN_BUNDLED_LIBRARIES
+  ${PLUGIN_BUNDLED_LIBRARIES}
+  $<TARGET_FILE:albedo_dart>
+  "${CMAKE_CURRENT_SOURCE_DIR}/albedo.dll"
   PARENT_SCOPE
 )

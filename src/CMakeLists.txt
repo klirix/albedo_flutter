@@ -5,18 +5,29 @@ cmake_minimum_required(VERSION 3.10)
 
 project(albedo_dart_library VERSION 0.0.1 LANGUAGES C)
 
-add_library(albedo_dart SHARED
-  "albedo_dart.c"
-)
+set(ALBEDO_DART_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/albedo_dart.h")
 
-set_target_properties(albedo_dart PROPERTIES
-  PUBLIC_HEADER albedo_dart.h
-  OUTPUT_NAME "albedo_dart"
-)
+if (WIN32)
+  # Use prebuilt Windows libraries shipped with the plugin.
+  add_library(albedo_dart SHARED IMPORTED GLOBAL)
+  set_target_properties(albedo_dart PROPERTIES
+    IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/../windows/albedo.dll"
+    IMPORTED_IMPLIB "${CMAKE_CURRENT_SOURCE_DIR}/../windows/albedo.lib"
+    PUBLIC_HEADER "${ALBEDO_DART_HEADER}"
+    OUTPUT_NAME "albedo"
+  )
+else()
+  # Fallback target for non-Windows platforms to satisfy plugin build steps.
+  add_library(albedo_dart INTERFACE)
+  set_target_properties(albedo_dart PROPERTIES
+    PUBLIC_HEADER "${ALBEDO_DART_HEADER}"
+  )
+endif()
 
-target_compile_definitions(albedo_dart PUBLIC DART_SHARED_LIB)
+target_include_directories(albedo_dart INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(albedo_dart INTERFACE DART_SHARED_LIB)
 
 if (ANDROID)
   # Support Android 15 16k page size
-  target_link_options(albedo_dart PRIVATE "-Wl,-z,max-page-size=16384")
+  target_link_options(albedo_dart INTERFACE "-Wl,-z,max-page-size=16384")
 endif()
