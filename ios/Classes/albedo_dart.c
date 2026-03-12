@@ -28,7 +28,6 @@ void dummy_function(void) {
     albedo_list_indexes(bucket, &doc);
     albedo_list_cursor_export(list_handle, &cursor);
     albedo_data(list_handle, &doc);
-    albedo_next(list_handle);
     albedo_close_iterator(list_handle);
 
     albedo_ensure_index(bucket, "", 0);

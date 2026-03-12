@@ -44,7 +44,6 @@ albedo_result albedo_delete(albedo_bucket *bucket, uint8_t *query_buffer, uint16
 albedo_result albedo_list(albedo_bucket *bucket, uint8_t *query_buffer, albedo_list_handle **out_iterator);
 albedo_result albedo_list_cursor_export(albedo_list_handle *handle, uint8_t **out_cursor);
 albedo_result albedo_data(albedo_list_handle *handle, uint8_t **out_doc);
-albedo_result albedo_next(albedo_list_handle *handle);
 albedo_result albedo_close_iterator(albedo_list_handle *iterator);
 
 albedo_result albedo_vacuum(albedo_bucket *bucket);
