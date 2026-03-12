@@ -42,6 +42,33 @@ class AlbedoDartBindings {
             int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<AlbedoBucket>)
           >();
 
+  int albedo_open_with_options(
+    ffi.Pointer<ffi.Char> path,
+    ffi.Pointer<ffi.Uint8> optionsBuffer,
+    ffi.Pointer<AlbedoBucket> out,
+  ) {
+    return _albedo_open_with_options(path, optionsBuffer, out);
+  }
+
+  late final _albedo_open_with_optionsPtr = _lookup<
+    ffi.NativeFunction<
+      AlbedoResult Function(
+        ffi.Pointer<ffi.Char>,
+        ffi.Pointer<ffi.Uint8>,
+        ffi.Pointer<AlbedoBucket>,
+      )
+    >
+  >('albedo_open_with_options');
+  late final _albedo_open_with_options =
+      _albedo_open_with_optionsPtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<AlbedoBucket>,
+            )
+          >();
+
   /// Close a database
   int albedo_close(AlbedoBucket bucket) {
     return _albedo_close(bucket);
@@ -146,6 +173,27 @@ class AlbedoDartBindings {
               ffi.Pointer<ffi.Uint8>,
               ffi.Pointer<AlbedoListHandle>,
             )
+          >();
+
+  int albedo_list_cursor_export(
+    AlbedoListHandle handle,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>> outCursor,
+  ) {
+    return _albedo_list_cursor_export(handle, outCursor);
+  }
+
+  late final _albedo_list_cursor_exportPtr = _lookup<
+    ffi.NativeFunction<
+      AlbedoResult Function(
+        AlbedoListHandle,
+        ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+      )
+    >
+  >('albedo_list_cursor_export');
+  late final _albedo_list_cursor_export =
+      _albedo_list_cursor_exportPtr
+          .asFunction<
+            int Function(AlbedoListHandle, ffi.Pointer<ffi.Pointer<ffi.Uint8>>)
           >();
 
   /// Get the current document from the iterator
@@ -436,3 +484,9 @@ const int ALBEDO_FILE_NOT_FOUND = 5;
 const int ALBEDO_NOT_FOUND = 6;
 
 const int ALBEDO_INVALID_FORMAT = 7;
+
+const int ALBEDO_DUPLICATE_KEY = 8;
+
+const int ALBEDO_INVALID_CURSOR = 9;
+
+const int ALBEDO_UNSUPPORTED_CURSOR_QUERY = 10;

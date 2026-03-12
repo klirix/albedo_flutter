@@ -13,32 +13,40 @@ static uint8_t dummy_callback(void *context, const uint8_t *data, uint32_t data_
 void dummy_function(void) {
     // This function is intentionally left empty.
     // It serves as a placeholder to ensure that the C file is not empty.
+    char path[] = "";
+    albedo_bucket *bucket = 0;
+    albedo_list_handle *list_handle = 0;
+    albedo_transform_iterator *transform_iterator = 0;
+    uint8_t *doc = 0;
+    uint8_t *cursor = 0;
+
     albedo_version();
-    void *dummy = 0;
-    albedo_close(dummy);
-    albedo_insert(dummy, ((uint8_t *)0));
-    albedo_delete(dummy, ((uint8_t *)0), 0);
-    albedo_list(dummy, ((uint8_t *)0), (AlbedoListHandle *)0);
-    albedo_data((AlbedoListHandle)0, (uint8_t **)0);
-    albedo_next((AlbedoListHandle)0);
-    albedo_close_iterator((AlbedoListHandle)0);
+    albedo_close(bucket);
+    albedo_insert(bucket, (uint8_t *)0);
+    albedo_delete(bucket, (uint8_t *)0, 0);
+    albedo_list(bucket, (uint8_t *)0, &list_handle);
+    albedo_list_indexes(bucket, &doc);
+    albedo_list_cursor_export(list_handle, &cursor);
+    albedo_data(list_handle, &doc);
+    albedo_next(list_handle);
+    albedo_close_iterator(list_handle);
 
-    albedo_ensure_index(dummy, "", 0);
-    albedo_drop_index(dummy, "");
-    albedo_flush(dummy);
+    albedo_ensure_index(bucket, "", 0);
+    albedo_drop_index(bucket, "");
+    albedo_flush(bucket);
 
-    albedo_transform(dummy, ((uint8_t *)0), (AlbedoTransformIterator *)0);
-    albedo_transform_data((AlbedoTransformIterator)0, (uint8_t **)0);
-    albedo_transform_apply((AlbedoTransformIterator)0, ((uint8_t *)0));
-    albedo_transform_close((AlbedoTransformIterator)0);
+    albedo_transform(bucket, (uint8_t *)0, &transform_iterator);
+    albedo_transform_data(transform_iterator, &doc);
+    albedo_transform_apply(transform_iterator, (uint8_t *)0);
+    albedo_transform_close(transform_iterator);
 
-    albedo_set_replication_callback(dummy, dummy_callback, dummy);
-    albedo_apply_batch(dummy, ((const uint8_t *)0), 0, 0);
+    albedo_set_replication_callback(bucket, dummy_callback, bucket);
+    albedo_apply_batch(bucket, (const uint8_t *)0, 0, 0);
 
-    albedo_vacuum(dummy);
+    albedo_vacuum(bucket);
     albedo_bitsize();
     albedo_version();
-    albedo_open("", (AlbedoBucket *)0);
+    albedo_open(path, &bucket);
 
     uint8_t *ptr = albedo_malloc(1);
     albedo_free(ptr, 1);
