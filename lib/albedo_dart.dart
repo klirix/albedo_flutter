@@ -6,6 +6,7 @@ import 'package:bson/bson.dart';
 import 'package:ffi/ffi.dart';
 
 import 'albedo_dart_bindings_generated.dart';
+import "package:fixnum/src/int64.dart" as fixnum;
 
 part 'query.dart';
 
@@ -142,9 +143,116 @@ class BucketOpenOptions {
   }
 }
 
+/// The type of change represented by a [ChangeEvent].
+enum ChangeOpKind { insert, update, delete }
+
+/// A single change event delivered by [Subscription.poll].
+class ChangeEvent {
+  /// Monotonically increasing oplog sequence number.
+  final int seqno;
+
+  /// The type of change.
+  final ChangeOpKind op;
+
+  /// Document identifier (12-byte ObjectId).
+  final dynamic docId;
+
+  /// Unix nanoseconds when the operation was written.
+  final int ts;
+
+  /// Full document body — present on insert/update when the inline payload
+  /// fits within 1 KB; `null` on delete (and large updates).
+  final Map<String, dynamic>? doc;
+
+  const ChangeEvent({
+    required this.seqno,
+    required this.op,
+    required this.docId,
+    required this.ts,
+    this.doc,
+  });
+}
+
+/// Thrown by [Subscription.poll] when the oplog ring wrapped and the
+/// subscriber fell too far behind. Close the [Subscription] and re-subscribe
+/// to resume — optionally performing a full scan first to rebuild local state.
+class SubscriptionGapException implements Exception {
+  @override
+  String toString() =>
+      'SubscriptionGapException: oplog ring wrapped — re-subscribe to resume';
+}
+
+/// A live subscription to the oplog change stream of a [Bucket].
+///
+/// Obtain one via [Bucket.subscribe], then call [poll] in a loop or use
+/// [Bucket.subscribeStream] for a managed async stream.
+class Subscription {
+  final Pointer<albedo_subscription_handle> _handle;
+  final Pointer<Pointer<Uint8>> _outDoc;
+  bool _isClosed = false;
+
+  Subscription._internal(this._handle) : _outDoc = malloc<Pointer<Uint8>>();
+
+  /// The latest committed oplog sequence number seen by this subscription.
+  int get seqno => _bindings.albedo_subscribe_seqno(_handle);
+
+  /// Polls for up to [maxEvents] new change events.
+  ///
+  /// Returns a non-empty list on `ALBEDO_HAS_DATA`.
+  /// Returns `null` when there are no new events (`ALBEDO_EOS`).
+  /// Throws [SubscriptionGapException] when the subscriber fell behind
+  /// (`ALBEDO_OPLOG_GAP`) — call [close] and re-subscribe to recover.
+  List<ChangeEvent>? poll({int maxEvents = 64}) {
+    if (_isClosed) throw StateError('Subscription is closed');
+
+    final res = _bindings.albedo_subscribe_poll(_handle, _outDoc, maxEvents);
+
+    if (res == albedo_result.ALBEDO_EOS) return null;
+    if (res == albedo_result.ALBEDO_OPLOG_GAP) throw SubscriptionGapException();
+    if (res != albedo_result.ALBEDO_HAS_DATA) {
+      throw Exception('albedo_subscribe_poll returned $res');
+    }
+
+    final dataPtr = _outDoc.value;
+    if (dataPtr.address == 0) return null;
+
+    final size = dataPtr.cast<Uint32>().value;
+    final batchDoc =
+        BsonCodec.deserialize(BsonBinary.from(dataPtr.asTypedList(size)))
+            as Map;
+    final batch = (batchDoc['batch'] as List).cast<Map>();
+
+    return batch.map((entry) {
+      final opStr = entry['op'] as String;
+      final op = switch (opStr) {
+        'insert' => ChangeOpKind.insert,
+        'update' => ChangeOpKind.update,
+        'delete' => ChangeOpKind.delete,
+        _ => throw Exception('Unknown subscription op: $opStr'),
+      };
+      final rawDoc = entry['doc'];
+      return ChangeEvent(
+        seqno: (entry['seqno'] as fixnum.Int64).toInt(),
+        op: op,
+        docId: entry['doc_id'],
+        ts: (entry['ts'] as fixnum.Int64).toInt(),
+        doc: rawDoc == null ? null : Map<String, dynamic>.from(rawDoc as Map),
+      );
+    }).toList();
+  }
+
+  /// Closes the subscription and frees its native resources.
+  void close() {
+    if (_isClosed) return;
+    _isClosed = true;
+    _bindings.albedo_subscribe_close(_handle);
+    malloc.free(_outDoc);
+  }
+}
+
 /// A handle to an open Albedo bucket.
 class Bucket {
-  final AlbedoBucket _handle;
+  final Pointer<albedo_bucket> _handle;
   bool _isClosed = false;
 
   Bucket._internal(this._handle);
@@ -168,10 +276,10 @@ class Bucket {
       final openRes = _bindings.albedo_open_with_options(
         pathPtr.cast<Char>(),
         serializedOptionsPtr,
-        out as Pointer<AlbedoBucket>,
+        out as Pointer<Pointer<albedo_bucket>>,
       );
 
-      if (openRes != ALBEDO_OK) {
+      if (openRes != albedo_result.ALBEDO_OK) {
         throw Exception('Error opening bucket: $openRes');
       }
 
@@ -184,7 +292,7 @@ class Bucket {
   }
 
   /// Opens a native list iterator for [query].
-  AlbedoListHandle _openListHandle(dynamic query) {
+  Pointer<albedo_list_handle> _openListHandle(dynamic query) {
     final serializedQuery =
         BsonCodec.serialize(_normalizeQuery(query)).byteList;
     final serializedQueryPtr = malloc<Uint8>(serializedQuery.length);
@@ -198,14 +306,14 @@ class Bucket {
       final listRes = _bindings.albedo_list(
         _handle,
         serializedQueryPtr,
-        out as Pointer<AlbedoListHandle>,
+        out as Pointer<Pointer<albedo_list_handle>>,
       );
 
-      if (listRes > 1) {
+      if (listRes.value > 1) {
         throw Exception('Error creating list iterator: $listRes');
       }
 
-      return Pointer.fromAddress(out.value) as AlbedoListHandle;
+      return Pointer.fromAddress(out.value) as Pointer<albedo_list_handle>;
     } finally {
       malloc.free(serializedQueryPtr);
       malloc.free(out);
@@ -214,7 +322,7 @@ class Bucket {
 
   /// Reads the current document from [listHandle], or `null` at end-of-stream.
   dynamic _readListDocument(
-    AlbedoListHandle listHandle,
+    Pointer<albedo_list_handle> listHandle,
     Pointer<Uint64> outDoc,
   ) {
     final res = _bindings.albedo_data(
@@ -222,11 +330,11 @@ class Bucket {
       outDoc as Pointer<Pointer<Uint8>>,
     );
 
-    if (res == ALBEDO_EOS || outDoc.value == 0) {
+    if (res == albedo_result.ALBEDO_EOS || outDoc.value == 0) {
       return null;
     }
 
-    if (res > 1) {
+    if (res.value > 1) {
       throw Exception('Error reading next data: $res');
     }
 
@@ -237,7 +345,9 @@ class Bucket {
   }
 
   /// Exports the current cursor state for [listHandle].
-  Map<String, dynamic> _exportListCursor(AlbedoListHandle listHandle) {
+  Map<String, dynamic> _exportListCursor(
+    Pointer<albedo_list_handle> listHandle,
+  ) {
     final outCursor = malloc<Pointer<Uint8>>();
     var cursorPtr = Pointer<Uint8>.fromAddress(0);
     var cursorSize = 0;
@@ -245,7 +355,7 @@ class Bucket {
     try {
       final res = _bindings.albedo_list_cursor_export(listHandle, outCursor);
 
-      if (res > 1) {
+      if (res.value > 1) {
         throw Exception('Error exporting list cursor: $res');
       }
 
@@ -407,20 +517,21 @@ class Bucket {
 
     Pointer<Int64> out = _bindings.albedo_malloc(8).cast();
     Pointer<Uint64> outDoc = _bindings.albedo_malloc(8).cast();
-    AlbedoTransformIterator iterator = Pointer.fromAddress(0);
+    Pointer<albedo_transform_iterator> iterator = Pointer.fromAddress(0);
 
     try {
       final transformRes = _bindings.albedo_transform(
         _handle,
         serializedQueryPtr,
-        out as Pointer<AlbedoTransformIterator>,
+        out as Pointer<Pointer<albedo_transform_iterator>>,
       );
 
-      if (transformRes > 1) {
+      if (transformRes.value > 1) {
         throw Exception('Error creating transform iterator: $transformRes');
       }
 
-      iterator = Pointer.fromAddress(out.value) as AlbedoTransformIterator;
+      iterator =
+          Pointer.fromAddress(out.value) as Pointer<albedo_transform_iterator>;
 
       while (true) {
         final res = _bindings.albedo_transform_data(
@@ -428,11 +539,11 @@ class Bucket {
           outDoc as Pointer<Pointer<Uint8>>,
         );
 
-        if (res == ALBEDO_EOS) {
+        if (res == albedo_result.ALBEDO_EOS) {
           break;
         }
 
-        if (res > 1) {
+        if (res.value > 1) {
           throw Exception('Error reading transform data: $res');
         }
 
@@ -447,7 +558,7 @@ class Bucket {
             iterator,
             Pointer<Uint8>.fromAddress(0),
           );
-          if (applyRes > 1) {
+          if (applyRes.value > 1) {
             throw Exception('Error applying transform: $applyRes');
           }
           continue;
@@ -462,7 +573,7 @@ class Bucket {
             iterator,
             updatedPtr,
           );
-          if (applyRes > 1) {
+          if (applyRes.value > 1) {
             throw Exception('Error applying transform: $applyRes');
           }
         } finally {
@@ -480,7 +591,7 @@ class Bucket {
   }
 
   /// Ensures an index exists at [path].
-  int ensureIndex(
+  albedo_result ensureIndex(
     String path, {
     bool unique = false,
     bool sparse = false,
@@ -500,7 +611,7 @@ class Bucket {
   }
 
   /// Drops the index stored at [path].
-  int dropIndex(String path) {
+  albedo_result dropIndex(String path) {
     final pathPtr = path.toNativeUtf8();
     final res = _bindings.albedo_drop_index(_handle, pathPtr.cast<Char>());
     malloc.free(pathPtr);
@@ -523,6 +634,78 @@ class Bucket {
       );
     } finally {
       malloc.free(serializedQueryPtr);
+    }
+  }
+
+  /// Opens an oplog subscription for change events matching [query].
+  ///
+  /// The caller is responsible for calling [Subscription.close] when done.
+  /// Use [subscribeStream] for a managed async stream that handles gaps
+  /// automatically.
+  Subscription subscribe(dynamic query) {
+    final serializedQuery =
+        BsonCodec.serialize(_normalizeQuery(query)).byteList;
+    final serializedQueryPtr = malloc<Uint8>(serializedQuery.length);
+    serializedQueryPtr
+        .asTypedList(serializedQuery.length)
+        .setAll(0, serializedQuery);
+
+    final out = malloc<Pointer<albedo_subscription_handle>>();
+
+    try {
+      final res = _bindings.albedo_subscribe(_handle, serializedQueryPtr, out);
+      if (res != albedo_result.ALBEDO_OK) {
+        throw Exception('albedo_subscribe returned $res');
+      }
+      return Subscription._internal(out.value);
+    } finally {
+      malloc.free(serializedQueryPtr);
+      malloc.free(out);
+    }
+  }
+
+  /// Returns a stream of change events matching [query].
+  ///
+  /// Polls every [pollingTimeout] when no new events are available.
+  /// Automatically re-subscribes when [SubscriptionGapException] is thrown,
+  /// so the stream never terminates due to a gap.
+  Stream<ChangeEvent> subscribeStream(
+    dynamic query, {
+    Duration pollingTimeout = const Duration(milliseconds: 50),
+    int maxEvents = 64,
+  }) async* {
+    var sub = subscribe(query);
+    try {
+      while (true) {
+        List<ChangeEvent>? events;
+        print('Polling for events with seqno ${sub.seqno}...');
+        try {
+          events = sub.poll(maxEvents: maxEvents);
+          print('Polled ${events?.length ?? 0} events with seqno ${sub.seqno}');
+        } on SubscriptionGapException {
+          print(
+            'Error polling subscription: subscription gap detected, re-subscribing...',
+          );
+          sub.close();
+          sub = subscribe(query);
+          continue;
+        } catch (e) {
+          print('Error polling subscription: $e');
+          await Future<void>.delayed(pollingTimeout);
+          continue;
+        }
+
+        if (events == null) {
+          await Future<void>.delayed(pollingTimeout);
+          continue;
+        }
+
+        for (final event in events) {
+          yield event;
+        }
+      }
+    } finally {
+      sub.close();
     }
   }
 

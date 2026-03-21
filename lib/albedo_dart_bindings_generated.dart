@@ -26,36 +26,46 @@ class AlbedoDartBindings {
     ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup,
   ) : _lookup = lookup;
 
-  /// Open a database
-  int albedo_open(ffi.Pointer<ffi.Char> path, ffi.Pointer<AlbedoBucket> out) {
-    return _albedo_open(path, out);
+  albedo_result albedo_open(
+    ffi.Pointer<ffi.Char> path,
+    ffi.Pointer<ffi.Pointer<albedo_bucket>> out,
+  ) {
+    return albedo_result.fromValue(_albedo_open(path, out));
   }
 
   late final _albedo_openPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(ffi.Pointer<ffi.Char>, ffi.Pointer<AlbedoBucket>)
+      ffi.UnsignedInt Function(
+        ffi.Pointer<ffi.Char>,
+        ffi.Pointer<ffi.Pointer<albedo_bucket>>,
+      )
     >
   >('albedo_open');
   late final _albedo_open =
       _albedo_openPtr
           .asFunction<
-            int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<AlbedoBucket>)
+            int Function(
+              ffi.Pointer<ffi.Char>,
+              ffi.Pointer<ffi.Pointer<albedo_bucket>>,
+            )
           >();
 
-  int albedo_open_with_options(
+  albedo_result albedo_open_with_options(
     ffi.Pointer<ffi.Char> path,
-    ffi.Pointer<ffi.Uint8> optionsBuffer,
-    ffi.Pointer<AlbedoBucket> out,
+    ffi.Pointer<ffi.Uint8> options_buffer,
+    ffi.Pointer<ffi.Pointer<albedo_bucket>> out,
   ) {
-    return _albedo_open_with_options(path, optionsBuffer, out);
+    return albedo_result.fromValue(
+      _albedo_open_with_options(path, options_buffer, out),
+    );
   }
 
   late final _albedo_open_with_optionsPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
+      ffi.UnsignedInt Function(
         ffi.Pointer<ffi.Char>,
         ffi.Pointer<ffi.Uint8>,
-        ffi.Pointer<AlbedoBucket>,
+        ffi.Pointer<ffi.Pointer<albedo_bucket>>,
       )
     >
   >('albedo_open_with_options');
@@ -65,103 +75,156 @@ class AlbedoDartBindings {
             int Function(
               ffi.Pointer<ffi.Char>,
               ffi.Pointer<ffi.Uint8>,
-              ffi.Pointer<AlbedoBucket>,
+              ffi.Pointer<ffi.Pointer<albedo_bucket>>,
             )
           >();
 
-  /// Close a database
-  int albedo_close(AlbedoBucket bucket) {
-    return _albedo_close(bucket);
+  albedo_result albedo_close(ffi.Pointer<albedo_bucket> bucket) {
+    return albedo_result.fromValue(_albedo_close(bucket));
   }
 
-  late final _albedo_closePtr =
-      _lookup<ffi.NativeFunction<AlbedoResult Function(AlbedoBucket)>>(
-        'albedo_close',
-      );
+  late final _albedo_closePtr = _lookup<
+    ffi.NativeFunction<ffi.UnsignedInt Function(ffi.Pointer<albedo_bucket>)>
+  >('albedo_close');
   late final _albedo_close =
-      _albedo_closePtr.asFunction<int Function(AlbedoBucket)>();
+      _albedo_closePtr.asFunction<int Function(ffi.Pointer<albedo_bucket>)>();
 
-  /// Insert a document
-  int albedo_insert(AlbedoBucket bucket, ffi.Pointer<ffi.Uint8> docBuffer) {
-    return _albedo_insert(bucket, docBuffer);
+  albedo_result albedo_insert(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Uint8> doc_buffer,
+  ) {
+    return albedo_result.fromValue(_albedo_insert(bucket, doc_buffer));
   }
 
   late final _albedo_insertPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(AlbedoBucket, ffi.Pointer<ffi.Uint8>)
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        ffi.Pointer<ffi.Uint8>,
+      )
     >
   >('albedo_insert');
   late final _albedo_insert =
       _albedo_insertPtr
-          .asFunction<int Function(AlbedoBucket, ffi.Pointer<ffi.Uint8>)>();
+          .asFunction<
+            int Function(ffi.Pointer<albedo_bucket>, ffi.Pointer<ffi.Uint8>)
+          >();
 
-  /// Ensure index exists
-  int albedo_ensure_index(
-    AlbedoBucket bucket,
+  albedo_result albedo_ensure_index(
+    ffi.Pointer<albedo_bucket> bucket,
     ffi.Pointer<ffi.Char> path,
     int options_byte,
   ) {
-    return _albedo_ensure_index(bucket, path, options_byte);
+    return albedo_result.fromValue(
+      _albedo_ensure_index(bucket, path, options_byte),
+    );
   }
 
   late final _albedo_ensure_indexPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(AlbedoBucket, ffi.Pointer<ffi.Char>, ffi.Uint8)
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        ffi.Pointer<ffi.Char>,
+        ffi.Uint8,
+      )
     >
   >('albedo_ensure_index');
   late final _albedo_ensure_index =
       _albedo_ensure_indexPtr
-          .asFunction<int Function(AlbedoBucket, ffi.Pointer<ffi.Char>, int)>();
+          .asFunction<
+            int Function(ffi.Pointer<albedo_bucket>, ffi.Pointer<ffi.Char>, int)
+          >();
 
-  /// Drop an index
-  int albedo_drop_index(AlbedoBucket bucket, ffi.Pointer<ffi.Char> path) {
-    return _albedo_drop_index(bucket, path);
+  albedo_result albedo_drop_index(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Char> path,
+  ) {
+    return albedo_result.fromValue(_albedo_drop_index(bucket, path));
   }
 
   late final _albedo_drop_indexPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(AlbedoBucket, ffi.Pointer<ffi.Char>)
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        ffi.Pointer<ffi.Char>,
+      )
     >
   >('albedo_drop_index');
   late final _albedo_drop_index =
       _albedo_drop_indexPtr
-          .asFunction<int Function(AlbedoBucket, ffi.Pointer<ffi.Char>)>();
+          .asFunction<
+            int Function(ffi.Pointer<albedo_bucket>, ffi.Pointer<ffi.Char>)
+          >();
 
-  /// Delete documents matching a query
-  int albedo_delete(
-    AlbedoBucket bucket,
-    ffi.Pointer<ffi.Uint8> queryBuffer,
-    int queryLen,
+  albedo_result albedo_list_indexes(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>> out_doc,
   ) {
-    return _albedo_delete(bucket, queryBuffer, queryLen);
+    return albedo_result.fromValue(_albedo_list_indexes(bucket, out_doc));
+  }
+
+  late final _albedo_list_indexesPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+      )
+    >
+  >('albedo_list_indexes');
+  late final _albedo_list_indexes =
+      _albedo_list_indexesPtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<albedo_bucket>,
+              ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+            )
+          >();
+
+  albedo_result albedo_delete(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Uint8> query_buffer,
+    int query_len,
+  ) {
+    return albedo_result.fromValue(
+      _albedo_delete(bucket, query_buffer, query_len),
+    );
   }
 
   late final _albedo_deletePtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(AlbedoBucket, ffi.Pointer<ffi.Uint8>, ffi.Uint16)
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        ffi.Pointer<ffi.Uint8>,
+        ffi.Uint16,
+      )
     >
   >('albedo_delete');
   late final _albedo_delete =
       _albedo_deletePtr
           .asFunction<
-            int Function(AlbedoBucket, ffi.Pointer<ffi.Uint8>, int)
+            int Function(
+              ffi.Pointer<albedo_bucket>,
+              ffi.Pointer<ffi.Uint8>,
+              int,
+            )
           >();
 
-  /// List documents matching a query
-  int albedo_list(
-    AlbedoBucket bucket,
-    ffi.Pointer<ffi.Uint8> queryBuffer,
-    ffi.Pointer<AlbedoListHandle> outIterator,
+  albedo_result albedo_list(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Uint8> query_buffer,
+    ffi.Pointer<ffi.Pointer<albedo_list_handle>> out_iterator,
   ) {
-    return _albedo_list(bucket, queryBuffer, outIterator);
+    return albedo_result.fromValue(
+      _albedo_list(bucket, query_buffer, out_iterator),
+    );
   }
 
   late final _albedo_listPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
-        AlbedoBucket,
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
         ffi.Pointer<ffi.Uint8>,
-        ffi.Pointer<AlbedoListHandle>,
+        ffi.Pointer<ffi.Pointer<albedo_list_handle>>,
       )
     >
   >('albedo_list');
@@ -169,23 +232,25 @@ class AlbedoDartBindings {
       _albedo_listPtr
           .asFunction<
             int Function(
-              AlbedoBucket,
+              ffi.Pointer<albedo_bucket>,
               ffi.Pointer<ffi.Uint8>,
-              ffi.Pointer<AlbedoListHandle>,
+              ffi.Pointer<ffi.Pointer<albedo_list_handle>>,
             )
           >();
 
-  int albedo_list_cursor_export(
-    AlbedoListHandle handle,
-    ffi.Pointer<ffi.Pointer<ffi.Uint8>> outCursor,
+  albedo_result albedo_list_cursor_export(
+    ffi.Pointer<albedo_list_handle> handle,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>> out_cursor,
   ) {
-    return _albedo_list_cursor_export(handle, outCursor);
+    return albedo_result.fromValue(
+      _albedo_list_cursor_export(handle, out_cursor),
+    );
   }
 
   late final _albedo_list_cursor_exportPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
-        AlbedoListHandle,
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_list_handle>,
         ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
       )
     >
@@ -193,21 +258,23 @@ class AlbedoDartBindings {
   late final _albedo_list_cursor_export =
       _albedo_list_cursor_exportPtr
           .asFunction<
-            int Function(AlbedoListHandle, ffi.Pointer<ffi.Pointer<ffi.Uint8>>)
+            int Function(
+              ffi.Pointer<albedo_list_handle>,
+              ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+            )
           >();
 
-  /// Get the current document from the iterator
-  int albedo_data(
-    AlbedoListHandle handle,
-    ffi.Pointer<ffi.Pointer<ffi.Uint8>> outDoc,
+  albedo_result albedo_data(
+    ffi.Pointer<albedo_list_handle> handle,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>> out_doc,
   ) {
-    return _albedo_data(handle, outDoc);
+    return albedo_result.fromValue(_albedo_data(handle, out_doc));
   }
 
   late final _albedo_dataPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
-        AlbedoListHandle,
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_list_handle>,
         ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
       )
     >
@@ -215,72 +282,63 @@ class AlbedoDartBindings {
   late final _albedo_data =
       _albedo_dataPtr
           .asFunction<
-            int Function(AlbedoListHandle, ffi.Pointer<ffi.Pointer<ffi.Uint8>>)
+            int Function(
+              ffi.Pointer<albedo_list_handle>,
+              ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+            )
           >();
 
-  /// Advance the iterator
-  int albedo_next(AlbedoListHandle handle) {
-    return _albedo_next(handle);
-  }
-
-  late final _albedo_nextPtr =
-      _lookup<ffi.NativeFunction<AlbedoResult Function(AlbedoListHandle)>>(
-        'albedo_next',
-      );
-  late final _albedo_next =
-      _albedo_nextPtr.asFunction<int Function(AlbedoListHandle)>();
-
-  /// Close the iterator and free resources
-  int albedo_close_iterator(AlbedoListHandle iterator) {
-    return _albedo_close_iterator(iterator);
-  }
-
-  late final _albedo_close_iteratorPtr =
-      _lookup<ffi.NativeFunction<AlbedoResult Function(AlbedoListHandle)>>(
-        'albedo_close_iterator',
-      );
-  late final _albedo_close_iterator =
-      _albedo_close_iteratorPtr.asFunction<int Function(AlbedoListHandle)>();
-
-  /// Vacuum the database
-  int albedo_vacuum(AlbedoBucket bucket) {
-    return _albedo_vacuum(bucket);
-  }
-
-  late final _albedo_vacuumPtr =
-      _lookup<ffi.NativeFunction<AlbedoResult Function(AlbedoBucket)>>(
-        'albedo_vacuum',
-      );
-  late final _albedo_vacuum =
-      _albedo_vacuumPtr.asFunction<int Function(AlbedoBucket)>();
-
-  /// Flush pending writes to disk
-  int albedo_flush(AlbedoBucket bucket) {
-    return _albedo_flush(bucket);
-  }
-
-  late final _albedo_flushPtr =
-      _lookup<ffi.NativeFunction<AlbedoResult Function(AlbedoBucket)>>(
-        'albedo_flush',
-      );
-  late final _albedo_flush =
-      _albedo_flushPtr.asFunction<int Function(AlbedoBucket)>();
-
-  /// Create a transform iterator
-  int albedo_transform(
-    AlbedoBucket bucket,
-    ffi.Pointer<ffi.Uint8> queryBuffer,
-    ffi.Pointer<AlbedoTransformIterator> iteratorOut,
+  albedo_result albedo_close_iterator(
+    ffi.Pointer<albedo_list_handle> iterator,
   ) {
-    return _albedo_transform(bucket, queryBuffer, iteratorOut);
+    return albedo_result.fromValue(_albedo_close_iterator(iterator));
+  }
+
+  late final _albedo_close_iteratorPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(ffi.Pointer<albedo_list_handle>)
+    >
+  >('albedo_close_iterator');
+  late final _albedo_close_iterator =
+      _albedo_close_iteratorPtr
+          .asFunction<int Function(ffi.Pointer<albedo_list_handle>)>();
+
+  albedo_result albedo_vacuum(ffi.Pointer<albedo_bucket> bucket) {
+    return albedo_result.fromValue(_albedo_vacuum(bucket));
+  }
+
+  late final _albedo_vacuumPtr = _lookup<
+    ffi.NativeFunction<ffi.UnsignedInt Function(ffi.Pointer<albedo_bucket>)>
+  >('albedo_vacuum');
+  late final _albedo_vacuum =
+      _albedo_vacuumPtr.asFunction<int Function(ffi.Pointer<albedo_bucket>)>();
+
+  albedo_result albedo_flush(ffi.Pointer<albedo_bucket> bucket) {
+    return albedo_result.fromValue(_albedo_flush(bucket));
+  }
+
+  late final _albedo_flushPtr = _lookup<
+    ffi.NativeFunction<ffi.UnsignedInt Function(ffi.Pointer<albedo_bucket>)>
+  >('albedo_flush');
+  late final _albedo_flush =
+      _albedo_flushPtr.asFunction<int Function(ffi.Pointer<albedo_bucket>)>();
+
+  albedo_result albedo_transform(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Uint8> query_buffer,
+    ffi.Pointer<ffi.Pointer<albedo_transform_iterator>> iterator_out,
+  ) {
+    return albedo_result.fromValue(
+      _albedo_transform(bucket, query_buffer, iterator_out),
+    );
   }
 
   late final _albedo_transformPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
-        AlbedoBucket,
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
         ffi.Pointer<ffi.Uint8>,
-        ffi.Pointer<AlbedoTransformIterator>,
+        ffi.Pointer<ffi.Pointer<albedo_transform_iterator>>,
       )
     >
   >('albedo_transform');
@@ -288,24 +346,23 @@ class AlbedoDartBindings {
       _albedo_transformPtr
           .asFunction<
             int Function(
-              AlbedoBucket,
+              ffi.Pointer<albedo_bucket>,
               ffi.Pointer<ffi.Uint8>,
-              ffi.Pointer<AlbedoTransformIterator>,
+              ffi.Pointer<ffi.Pointer<albedo_transform_iterator>>,
             )
           >();
 
-  /// Get the current document from the transform iterator
-  int albedo_transform_data(
-    AlbedoTransformIterator iterator,
-    ffi.Pointer<ffi.Pointer<ffi.Uint8>> outDoc,
+  albedo_result albedo_transform_data(
+    ffi.Pointer<albedo_transform_iterator> iterator,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>> out_doc,
   ) {
-    return _albedo_transform_data(iterator, outDoc);
+    return albedo_result.fromValue(_albedo_transform_data(iterator, out_doc));
   }
 
   late final _albedo_transform_dataPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
-        AlbedoTransformIterator,
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_transform_iterator>,
         ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
       )
     >
@@ -314,56 +371,67 @@ class AlbedoDartBindings {
       _albedo_transform_dataPtr
           .asFunction<
             int Function(
-              AlbedoTransformIterator,
+              ffi.Pointer<albedo_transform_iterator>,
               ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
             )
           >();
 
-  /// Apply a transformation to the current document (nullable buffer to delete)
-  int albedo_transform_apply(
-    AlbedoTransformIterator iterator,
-    ffi.Pointer<ffi.Uint8> transformBuffer,
+  albedo_result albedo_transform_apply(
+    ffi.Pointer<albedo_transform_iterator> iterator,
+    ffi.Pointer<ffi.Uint8> transform_buffer,
   ) {
-    return _albedo_transform_apply(iterator, transformBuffer);
+    return albedo_result.fromValue(
+      _albedo_transform_apply(iterator, transform_buffer),
+    );
   }
 
   late final _albedo_transform_applyPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(AlbedoTransformIterator, ffi.Pointer<ffi.Uint8>)
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_transform_iterator>,
+        ffi.Pointer<ffi.Uint8>,
+      )
     >
   >('albedo_transform_apply');
   late final _albedo_transform_apply =
       _albedo_transform_applyPtr
           .asFunction<
-            int Function(AlbedoTransformIterator, ffi.Pointer<ffi.Uint8>)
+            int Function(
+              ffi.Pointer<albedo_transform_iterator>,
+              ffi.Pointer<ffi.Uint8>,
+            )
           >();
 
-  /// Close the transform iterator
-  int albedo_transform_close(AlbedoTransformIterator iterator) {
-    return _albedo_transform_close(iterator);
+  albedo_result albedo_transform_close(
+    ffi.Pointer<albedo_transform_iterator> iterator,
+  ) {
+    return albedo_result.fromValue(_albedo_transform_close(iterator));
   }
 
   late final _albedo_transform_closePtr = _lookup<
-    ffi.NativeFunction<AlbedoResult Function(AlbedoTransformIterator)>
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(ffi.Pointer<albedo_transform_iterator>)
+    >
   >('albedo_transform_close');
   late final _albedo_transform_close =
       _albedo_transform_closePtr
-          .asFunction<int Function(AlbedoTransformIterator)>();
+          .asFunction<int Function(ffi.Pointer<albedo_transform_iterator>)>();
 
-  /// Set a callback for page replication
-  int albedo_set_replication_callback(
-    AlbedoBucket bucket,
-    AlbedoPageChangeCallback callback,
+  albedo_result albedo_set_replication_callback(
+    ffi.Pointer<albedo_bucket> bucket,
+    albedo_page_change_callback callback,
     ffi.Pointer<ffi.Void> context,
   ) {
-    return _albedo_set_replication_callback(bucket, callback, context);
+    return albedo_result.fromValue(
+      _albedo_set_replication_callback(bucket, callback, context),
+    );
   }
 
   late final _albedo_set_replication_callbackPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
-        AlbedoBucket,
-        AlbedoPageChangeCallback,
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        albedo_page_change_callback,
         ffi.Pointer<ffi.Void>,
       )
     >
@@ -372,26 +440,27 @@ class AlbedoDartBindings {
       _albedo_set_replication_callbackPtr
           .asFunction<
             int Function(
-              AlbedoBucket,
-              AlbedoPageChangeCallback,
+              ffi.Pointer<albedo_bucket>,
+              albedo_page_change_callback,
               ffi.Pointer<ffi.Void>,
             )
           >();
 
-  /// Apply a replicated page batch
-  int albedo_apply_batch(
-    AlbedoBucket bucket,
+  albedo_result albedo_apply_batch(
+    ffi.Pointer<albedo_bucket> bucket,
     ffi.Pointer<ffi.Uint8> data,
     int data_size,
     int page_count,
   ) {
-    return _albedo_apply_batch(bucket, data, data_size, page_count);
+    return albedo_result.fromValue(
+      _albedo_apply_batch(bucket, data, data_size, page_count),
+    );
   }
 
   late final _albedo_apply_batchPtr = _lookup<
     ffi.NativeFunction<
-      AlbedoResult Function(
-        AlbedoBucket,
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
         ffi.Pointer<ffi.Uint8>,
         ffi.Uint32,
         ffi.Uint32,
@@ -401,10 +470,14 @@ class AlbedoDartBindings {
   late final _albedo_apply_batch =
       _albedo_apply_batchPtr
           .asFunction<
-            int Function(AlbedoBucket, ffi.Pointer<ffi.Uint8>, int, int)
+            int Function(
+              ffi.Pointer<albedo_bucket>,
+              ffi.Pointer<ffi.Uint8>,
+              int,
+              int,
+            )
           >();
 
-  /// Get the platform bit size
   int albedo_bitsize() {
     return _albedo_bitsize();
   }
@@ -413,7 +486,6 @@ class AlbedoDartBindings {
       _lookup<ffi.NativeFunction<ffi.Uint32 Function()>>('albedo_bitsize');
   late final _albedo_bitsize = _albedo_bitsizePtr.asFunction<int Function()>();
 
-  /// Get the library version
   int albedo_version() {
     return _albedo_version();
   }
@@ -422,7 +494,6 @@ class AlbedoDartBindings {
       _lookup<ffi.NativeFunction<ffi.Uint32 Function()>>('albedo_version');
   late final _albedo_version = _albedo_versionPtr.asFunction<int Function()>();
 
-  /// Allocate and free memory using the library allocator
   ffi.Pointer<ffi.Uint8> albedo_malloc(int size) {
     return _albedo_malloc(size);
   }
@@ -443,50 +514,191 @@ class AlbedoDartBindings {
   >('albedo_free');
   late final _albedo_free =
       _albedo_freePtr.asFunction<void Function(ffi.Pointer<ffi.Uint8>, int)>();
+
+  /// ── Subscription (oplog change stream) ────────────────────────────────
+  albedo_result albedo_subscribe(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Uint8> query_buffer,
+    ffi.Pointer<ffi.Pointer<albedo_subscription_handle>> out_handle,
+  ) {
+    return albedo_result.fromValue(
+      _albedo_subscribe(bucket, query_buffer, out_handle),
+    );
+  }
+
+  late final _albedo_subscribePtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        ffi.Pointer<ffi.Uint8>,
+        ffi.Pointer<ffi.Pointer<albedo_subscription_handle>>,
+      )
+    >
+  >('albedo_subscribe');
+  late final _albedo_subscribe =
+      _albedo_subscribePtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<albedo_bucket>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Pointer<albedo_subscription_handle>>,
+            )
+          >();
+
+  /// Poll for new change events.
+  ///
+  /// On ALBEDO_HAS_DATA, *out_doc points to a BSON document
+  /// `{batch: [{seqno, op, doc_id, ts, doc?}, ...]}`.
+  /// The memory is owned by the subscription and stays valid until the
+  /// next albedo_subscribe_poll() or albedo_subscribe_close() call.
+  ///
+  /// Returns ALBEDO_EOS when idle, ALBEDO_OPLOG_GAP when the subscriber
+  /// fell behind (must re-subscribe).
+  albedo_result albedo_subscribe_poll(
+    ffi.Pointer<albedo_subscription_handle> handle,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>> out_doc,
+    int max_events,
+  ) {
+    return albedo_result.fromValue(
+      _albedo_subscribe_poll(handle, out_doc, max_events),
+    );
+  }
+
+  late final _albedo_subscribe_pollPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_subscription_handle>,
+        ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+        ffi.Uint32,
+      )
+    >
+  >('albedo_subscribe_poll');
+  late final _albedo_subscribe_poll =
+      _albedo_subscribe_pollPtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<albedo_subscription_handle>,
+              ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+              int,
+            )
+          >();
+
+  int albedo_subscribe_seqno(ffi.Pointer<albedo_subscription_handle> handle) {
+    return _albedo_subscribe_seqno(handle);
+  }
+
+  late final _albedo_subscribe_seqnoPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.Uint64 Function(ffi.Pointer<albedo_subscription_handle>)
+    >
+  >('albedo_subscribe_seqno');
+  late final _albedo_subscribe_seqno =
+      _albedo_subscribe_seqnoPtr
+          .asFunction<int Function(ffi.Pointer<albedo_subscription_handle>)>();
+
+  albedo_result albedo_subscribe_close(
+    ffi.Pointer<albedo_subscription_handle> handle,
+  ) {
+    return albedo_result.fromValue(_albedo_subscribe_close(handle));
+  }
+
+  late final _albedo_subscribe_closePtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(ffi.Pointer<albedo_subscription_handle>)
+    >
+  >('albedo_subscribe_close');
+  late final _albedo_subscribe_close =
+      _albedo_subscribe_closePtr
+          .asFunction<int Function(ffi.Pointer<albedo_subscription_handle>)>();
 }
 
-typedef AlbedoResult = ffi.Uint8;
-typedef DartAlbedoResult = int;
+final class albedo_bucket extends ffi.Opaque {}
 
-/// Opaque pointer types as void pointers
-typedef AlbedoBucket = ffi.Pointer<ffi.Void>;
-typedef AlbedoListHandle = ffi.Pointer<ffi.Void>;
-typedef AlbedoTransformIterator = ffi.Pointer<ffi.Void>;
-typedef AlbedoPageChangeCallback =
-    ffi.Pointer<ffi.NativeFunction<AlbedoPageChangeCallbackFunction>>;
-typedef AlbedoPageChangeCallbackFunction =
+final class albedo_list_handle extends ffi.Opaque {}
+
+final class albedo_transform_iterator extends ffi.Opaque {}
+
+final class albedo_subscription_handle extends ffi.Opaque {}
+
+enum albedo_result {
+  ALBEDO_OK(0),
+  ALBEDO_ERROR(1),
+  ALBEDO_HAS_DATA(2),
+  ALBEDO_EOS(3),
+  ALBEDO_OUT_OF_MEMORY(4),
+  ALBEDO_FILE_NOT_FOUND(5),
+  ALBEDO_NOT_FOUND(6),
+  ALBEDO_INVALID_FORMAT(7),
+  ALBEDO_DUPLICATE_KEY(8),
+  ALBEDO_INVALID_CURSOR(9),
+  ALBEDO_UNSUPPORTED_CURSOR_QUERY(10),
+  ALBEDO_OPLOG_GAP(11);
+
+  final int value;
+  const albedo_result(this.value);
+
+  static albedo_result fromValue(int value) => switch (value) {
+    0 => ALBEDO_OK,
+    1 => ALBEDO_ERROR,
+    2 => ALBEDO_HAS_DATA,
+    3 => ALBEDO_EOS,
+    4 => ALBEDO_OUT_OF_MEMORY,
+    5 => ALBEDO_FILE_NOT_FOUND,
+    6 => ALBEDO_NOT_FOUND,
+    7 => ALBEDO_INVALID_FORMAT,
+    8 => ALBEDO_DUPLICATE_KEY,
+    9 => ALBEDO_INVALID_CURSOR,
+    10 => ALBEDO_UNSUPPORTED_CURSOR_QUERY,
+    11 => ALBEDO_OPLOG_GAP,
+    _ => throw ArgumentError("Unknown value for albedo_result: $value"),
+  };
+}
+
+enum albedo_op_kind {
+  ALBEDO_OP_INSERT(1),
+  ALBEDO_OP_UPDATE(2),
+  ALBEDO_OP_DELETE(3);
+
+  final int value;
+  const albedo_op_kind(this.value);
+
+  static albedo_op_kind fromValue(int value) => switch (value) {
+    1 => ALBEDO_OP_INSERT,
+    2 => ALBEDO_OP_UPDATE,
+    3 => ALBEDO_OP_DELETE,
+    _ => throw ArgumentError("Unknown value for albedo_op_kind: $value"),
+  };
+}
+
+enum albedo_payload_kind {
+  ALBEDO_PAYLOAD_INLINE(0),
+  ALBEDO_PAYLOAD_REF(1),
+  ALBEDO_PAYLOAD_NONE(2);
+
+  final int value;
+  const albedo_payload_kind(this.value);
+
+  static albedo_payload_kind fromValue(int value) => switch (value) {
+    0 => ALBEDO_PAYLOAD_INLINE,
+    1 => ALBEDO_PAYLOAD_REF,
+    2 => ALBEDO_PAYLOAD_NONE,
+    _ => throw ArgumentError("Unknown value for albedo_payload_kind: $value"),
+  };
+}
+
+typedef albedo_page_change_callback =
+    ffi.Pointer<ffi.NativeFunction<albedo_page_change_callbackFunction>>;
+typedef albedo_page_change_callbackFunction =
     ffi.Uint8 Function(
       ffi.Pointer<ffi.Void> context,
       ffi.Pointer<ffi.Uint8> data,
       ffi.Uint32 data_size,
       ffi.Uint32 page_count,
     );
-typedef DartAlbedoPageChangeCallbackFunction =
+typedef Dartalbedo_page_change_callbackFunction =
     int Function(
       ffi.Pointer<ffi.Void> context,
       ffi.Pointer<ffi.Uint8> data,
       int data_size,
       int page_count,
     );
-
-const int ALBEDO_OK = 0;
-
-const int ALBEDO_ERROR = 1;
-
-const int ALBEDO_HAS_DATA = 2;
-
-const int ALBEDO_EOS = 3;
-
-const int ALBEDO_OUT_OF_MEMORY = 4;
-
-const int ALBEDO_FILE_NOT_FOUND = 5;
-
-const int ALBEDO_NOT_FOUND = 6;
-
-const int ALBEDO_INVALID_FORMAT = 7;
-
-const int ALBEDO_DUPLICATE_KEY = 8;
-
-const int ALBEDO_INVALID_CURSOR = 9;
-
-const int ALBEDO_UNSUPPORTED_CURSOR_QUERY = 10;

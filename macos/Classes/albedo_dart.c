@@ -42,6 +42,11 @@ void dummy_function(void) {
     albedo_set_replication_callback(bucket, dummy_callback, bucket);
     albedo_apply_batch(bucket, (const uint8_t *)0, 0, 0);
 
+    albedo_subscribe(bucket, (uint8_t *)0, &list_handle);
+    albedo_subscribe_poll(list_handle, &doc, 0);
+    albedo_subscribe_seqno(list_handle);
+    albedo_subscribe_close(list_handle);
+
     albedo_vacuum(bucket);
     albedo_bitsize();
     albedo_version();

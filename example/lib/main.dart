@@ -34,10 +34,9 @@ class ExampleHomePage extends StatefulWidget {
 class _ExampleHomePageState extends State<ExampleHomePage>
     with WidgetsBindingObserver {
   Bucket? _users;
-  StreamSubscription<dynamic>? _tableWatcher;
+  StreamSubscription<ChangeEvent>? _tableWatcher;
   int _version = 0;
   int? _selectedTimestamp;
-  int _ignoredWatchEvents = 0;
   bool _isClosingBucket = false;
   bool _isInitializing = true;
   bool _isWatchingTable = false;
@@ -100,6 +99,8 @@ class _ExampleHomePageState extends State<ExampleHomePage>
       );
       users.ensureIndex('timestamp', reverse: true);
 
+      print("Buck at path: $bucketPath");
+
       if (!mounted) {
         users.close();
         return;
@@ -132,15 +133,17 @@ class _ExampleHomePageState extends State<ExampleHomePage>
     }
 
     _tableWatcher?.cancel();
-    _ignoredWatchEvents = _records.length;
     _tableWatcher = users
-        .stream(_tableQuery())
+        .subscribeStream(Query(), pollingTimeout: Duration(milliseconds: 5))
         .listen(
-          _handleWatchedDocument,
-          onError: (Object error) {
+          _handleWatchedEvent,
+          onError: (Object error, StackTrace trace) {
             if (!mounted) {
               return;
             }
+
+            print(error);
+            print(trace);
 
             setState(() {
               _isWatchingTable = false;
@@ -156,26 +159,21 @@ class _ExampleHomePageState extends State<ExampleHomePage>
     }
   }
 
-  void _handleWatchedDocument(dynamic doc) {
-    final watchedRecord = _UserRecord.fromDocument(
-      Map<String, dynamic>.from(doc as Map),
-      0,
-    );
-
-    if (_ignoredWatchEvents > 0) {
-      _ignoredWatchEvents -= 1;
-
-      if (_ignoredWatchEvents == 0 && mounted) {
-        setState(() {
-          _statusMessage = 'Live watcher attached to table query';
-        });
-      }
-      return;
-    }
+  void _handleWatchedEvent(ChangeEvent event) {
+    final label = switch (event.op) {
+      ChangeOpKind.insert => 'insert',
+      ChangeOpKind.update => 'update',
+      ChangeOpKind.delete => 'delete',
+    };
+    final name =
+        event.doc == null ? null : '${event.doc!['name'] ?? 'document'}';
 
     unawaited(
       _refreshTable(
-        successMessage: 'Live update received for ${watchedRecord.name}',
+        successMessage:
+            name == null
+                ? 'Live $label event received'
+                : 'Live $label event received for $name',
       ),
     );
   }
