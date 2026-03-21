@@ -110,6 +110,153 @@ class AlbedoDartBindings {
             int Function(ffi.Pointer<albedo_bucket>, ffi.Pointer<ffi.Uint8>)
           >();
 
+  albedo_result albedo_transaction_begin(
+    ffi.Pointer<albedo_bucket> bucket,
+    ffi.Pointer<ffi.Pointer<albedo_transaction>> out,
+  ) {
+    return albedo_result.fromValue(_albedo_transaction_begin(bucket, out));
+  }
+
+  late final _albedo_transaction_beginPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_bucket>,
+        ffi.Pointer<ffi.Pointer<albedo_transaction>>,
+      )
+    >
+  >('albedo_transaction_begin');
+  late final _albedo_transaction_begin =
+      _albedo_transaction_beginPtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<albedo_bucket>,
+              ffi.Pointer<ffi.Pointer<albedo_transaction>>,
+            )
+          >();
+
+  albedo_result albedo_transaction_insert(
+    ffi.Pointer<albedo_transaction> tx,
+    ffi.Pointer<ffi.Uint8> doc_buffer,
+  ) {
+    return albedo_result.fromValue(_albedo_transaction_insert(tx, doc_buffer));
+  }
+
+  late final _albedo_transaction_insertPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_transaction>,
+        ffi.Pointer<ffi.Uint8>,
+      )
+    >
+  >('albedo_transaction_insert');
+  late final _albedo_transaction_insert =
+      _albedo_transaction_insertPtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<albedo_transaction>,
+              ffi.Pointer<ffi.Uint8>,
+            )
+          >();
+
+  albedo_result albedo_transaction_delete(
+    ffi.Pointer<albedo_transaction> tx,
+    ffi.Pointer<ffi.Uint8> query_buffer,
+    int query_len,
+  ) {
+    return albedo_result.fromValue(
+      _albedo_transaction_delete(tx, query_buffer, query_len),
+    );
+  }
+
+  late final _albedo_transaction_deletePtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_transaction>,
+        ffi.Pointer<ffi.Uint8>,
+        ffi.Uint16,
+      )
+    >
+  >('albedo_transaction_delete');
+  late final _albedo_transaction_delete =
+      _albedo_transaction_deletePtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<albedo_transaction>,
+              ffi.Pointer<ffi.Uint8>,
+              int,
+            )
+          >();
+
+  albedo_result albedo_transaction_transform(
+    ffi.Pointer<albedo_transaction> tx,
+    ffi.Pointer<ffi.Uint8> query_buffer,
+    ffi.Pointer<ffi.Pointer<albedo_transform_iterator>> iterator_out,
+  ) {
+    return albedo_result.fromValue(
+      _albedo_transaction_transform(tx, query_buffer, iterator_out),
+    );
+  }
+
+  late final _albedo_transaction_transformPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(
+        ffi.Pointer<albedo_transaction>,
+        ffi.Pointer<ffi.Uint8>,
+        ffi.Pointer<ffi.Pointer<albedo_transform_iterator>>,
+      )
+    >
+  >('albedo_transaction_transform');
+  late final _albedo_transaction_transform =
+      _albedo_transaction_transformPtr
+          .asFunction<
+            int Function(
+              ffi.Pointer<albedo_transaction>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Pointer<albedo_transform_iterator>>,
+            )
+          >();
+
+  albedo_result albedo_transaction_commit(ffi.Pointer<albedo_transaction> tx) {
+    return albedo_result.fromValue(_albedo_transaction_commit(tx));
+  }
+
+  late final _albedo_transaction_commitPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(ffi.Pointer<albedo_transaction>)
+    >
+  >('albedo_transaction_commit');
+  late final _albedo_transaction_commit =
+      _albedo_transaction_commitPtr
+          .asFunction<int Function(ffi.Pointer<albedo_transaction>)>();
+
+  albedo_result albedo_transaction_rollback(
+    ffi.Pointer<albedo_transaction> tx,
+  ) {
+    return albedo_result.fromValue(_albedo_transaction_rollback(tx));
+  }
+
+  late final _albedo_transaction_rollbackPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(ffi.Pointer<albedo_transaction>)
+    >
+  >('albedo_transaction_rollback');
+  late final _albedo_transaction_rollback =
+      _albedo_transaction_rollbackPtr
+          .asFunction<int Function(ffi.Pointer<albedo_transaction>)>();
+
+  albedo_result albedo_transaction_close(ffi.Pointer<albedo_transaction> tx) {
+    return albedo_result.fromValue(_albedo_transaction_close(tx));
+  }
+
+  late final _albedo_transaction_closePtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(ffi.Pointer<albedo_transaction>)
+    >
+  >('albedo_transaction_close');
+  late final _albedo_transaction_close =
+      _albedo_transaction_closePtr
+          .asFunction<int Function(ffi.Pointer<albedo_transaction>)>();
+
   albedo_result albedo_ensure_index(
     ffi.Pointer<albedo_bucket> bucket,
     ffi.Pointer<ffi.Char> path,
@@ -287,6 +434,19 @@ class AlbedoDartBindings {
               ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
             )
           >();
+
+  albedo_result albedo_next(ffi.Pointer<albedo_list_handle> handle) {
+    return albedo_result.fromValue(_albedo_next(handle));
+  }
+
+  late final _albedo_nextPtr = _lookup<
+    ffi.NativeFunction<
+      ffi.UnsignedInt Function(ffi.Pointer<albedo_list_handle>)
+    >
+  >('albedo_next');
+  late final _albedo_next =
+      _albedo_nextPtr
+          .asFunction<int Function(ffi.Pointer<albedo_list_handle>)>();
 
   albedo_result albedo_close_iterator(
     ffi.Pointer<albedo_list_handle> iterator,
@@ -620,6 +780,8 @@ final class albedo_transform_iterator extends ffi.Opaque {}
 
 final class albedo_subscription_handle extends ffi.Opaque {}
 
+final class albedo_transaction extends ffi.Opaque {}
+
 enum albedo_result {
   ALBEDO_OK(0),
   ALBEDO_ERROR(1),
@@ -632,7 +794,10 @@ enum albedo_result {
   ALBEDO_DUPLICATE_KEY(8),
   ALBEDO_INVALID_CURSOR(9),
   ALBEDO_UNSUPPORTED_CURSOR_QUERY(10),
-  ALBEDO_OPLOG_GAP(11);
+  ALBEDO_OPLOG_GAP(11),
+  ALBEDO_TRANSACTION_ACTIVE(12),
+  ALBEDO_INVALID_TRANSACTION(13),
+  ALBEDO_TRANSACTION_BUSY(14);
 
   final int value;
   const albedo_result(this.value);
@@ -650,6 +815,9 @@ enum albedo_result {
     9 => ALBEDO_INVALID_CURSOR,
     10 => ALBEDO_UNSUPPORTED_CURSOR_QUERY,
     11 => ALBEDO_OPLOG_GAP,
+    12 => ALBEDO_TRANSACTION_ACTIVE,
+    13 => ALBEDO_INVALID_TRANSACTION,
+    14 => ALBEDO_TRANSACTION_BUSY,
     _ => throw ArgumentError("Unknown value for albedo_result: $value"),
   };
 }

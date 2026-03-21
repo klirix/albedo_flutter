@@ -17,6 +17,7 @@ void dummy_function(void) {
     albedo_bucket *bucket = 0;
     albedo_list_handle *list_handle = 0;
     albedo_transform_iterator *transform_iterator = 0;
+    albedo_subscription_handle *subscription_handle = 0;
     uint8_t *doc = 0;
     uint8_t *cursor = 0;
 
@@ -42,10 +43,19 @@ void dummy_function(void) {
     albedo_set_replication_callback(bucket, dummy_callback, bucket);
     albedo_apply_batch(bucket, (const uint8_t *)0, 0, 0);
 
-    albedo_subscribe(bucket, (uint8_t *)0, &list_handle);
-    albedo_subscribe_poll(list_handle, &doc, 0);
-    albedo_subscribe_seqno(list_handle);
-    albedo_subscribe_close(list_handle);
+    albedo_subscribe(bucket, (uint8_t *)0, &subscription_handle);
+    albedo_subscribe_poll(subscription_handle, &doc, 0);
+    albedo_subscribe_seqno(subscription_handle);
+    albedo_subscribe_close(subscription_handle);
+
+    albedo_transaction *tx = 0;
+    albedo_transaction_begin(bucket, &tx);
+    albedo_transaction_insert(tx, (uint8_t *)0);
+    albedo_transaction_delete(tx, (uint8_t *)0, 0);
+    albedo_transaction_transform(tx, (uint8_t *)0, &transform_iterator);
+    albedo_transaction_commit(tx);
+    albedo_transaction_rollback(tx);
+    albedo_transaction_close(tx);
 
     albedo_vacuum(bucket);
     albedo_bitsize();

@@ -13,6 +13,12 @@ part 'query.dart';
 const String _libName = 'albedo';
 
 final DynamicLibrary _dylib = () {
+  // Allow tests (and CI) to override the library path via an environment
+  // variable — useful on macOS where SIP ignores DYLD_LIBRARY_PATH for
+  // signed executables.
+  final envPath = Platform.environment['ALBEDO_DYLIB_PATH'];
+  if (envPath != null) return DynamicLibrary.open(envPath);
+
   if (Platform.isIOS) {
     return DynamicLibrary.process();
   }
@@ -247,6 +253,144 @@ class Subscription {
     _isClosed = true;
     _bindings.albedo_subscribe_close(_handle);
     malloc.free(_outDoc);
+  }
+}
+
+/// An in-progress write transaction on a [Bucket].
+///
+/// Obtain one via [Bucket.tx] — the callback receives a [Transaction] that
+/// is automatically committed on success and rolled back on error.
+/// Do not use this object after the callback returns.
+class Transaction {
+  final Pointer<albedo_transaction> _handle;
+  bool _done = false;
+
+  Transaction._internal(this._handle);
+
+  void _checkDone() {
+    if (_done) throw StateError('Transaction is already closed');
+  }
+
+  /// Inserts [obj] into the bucket within this transaction.
+  void insert(dynamic obj) {
+    _checkDone();
+    final docBuffer = BsonCodec.serialize(obj).byteList;
+    final docBufferPtr = malloc<Uint8>(docBuffer.length);
+    docBufferPtr.asTypedList(docBuffer.length).setAll(0, docBuffer);
+    try {
+      final res = _bindings.albedo_transaction_insert(_handle, docBufferPtr);
+      if (res != albedo_result.ALBEDO_OK) {
+        throw Exception('albedo_transaction_insert returned $res');
+      }
+    } finally {
+      malloc.free(docBufferPtr);
+    }
+  }
+
+  /// Deletes all documents matching [query] within this transaction.
+  void delete(Query query) {
+    _checkDone();
+    final serializedQuery = BsonCodec.serialize(query.toMap()).byteList;
+    final serializedQueryPtr = malloc<Uint8>(serializedQuery.length);
+    serializedQueryPtr
+        .asTypedList(serializedQuery.length)
+        .setAll(0, serializedQuery);
+    try {
+      final res = _bindings.albedo_transaction_delete(
+        _handle,
+        serializedQueryPtr,
+        serializedQuery.length,
+      );
+      if (res != albedo_result.ALBEDO_OK) {
+        throw Exception('albedo_transaction_delete returned $res');
+      }
+    } finally {
+      malloc.free(serializedQueryPtr);
+    }
+  }
+
+  /// Applies [updater] to each document matching [query] within this transaction.
+  ///
+  /// Returning `null` from [updater] deletes the current document.
+  void transform(
+    Query query,
+    Map<String, dynamic>? Function(Map<String, dynamic> inDoc) updater,
+  ) {
+    _checkDone();
+    final serializedQuery = BsonCodec.serialize(query.toMap()).byteList;
+    final serializedQueryPtr = _bindings.albedo_malloc(serializedQuery.length);
+    serializedQueryPtr
+        .asTypedList(serializedQuery.length)
+        .setAll(0, serializedQuery);
+
+    final out = _bindings.albedo_malloc(8).cast<Int64>();
+    final outDoc = _bindings.albedo_malloc(8).cast<Uint64>();
+    var iterator = Pointer<albedo_transform_iterator>.fromAddress(0);
+
+    try {
+      final transformRes = _bindings.albedo_transaction_transform(
+        _handle,
+        serializedQueryPtr,
+        out as Pointer<Pointer<albedo_transform_iterator>>,
+      );
+      if (transformRes.value > 1) {
+        throw Exception('albedo_transaction_transform returned $transformRes');
+      }
+
+      iterator =
+          Pointer.fromAddress(out.value) as Pointer<albedo_transform_iterator>;
+
+      while (true) {
+        final res = _bindings.albedo_transform_data(
+          iterator,
+          outDoc as Pointer<Pointer<Uint8>>,
+        );
+        if (res == albedo_result.ALBEDO_EOS) break;
+        if (res.value > 1) {
+          throw Exception('albedo_transform_data returned $res');
+        }
+
+        final dataPtr = Pointer.fromAddress(outDoc.value).cast<Uint8>();
+        final size = dataPtr.cast<Uint32>().value;
+        final doc = BsonCodec.deserialize(
+          BsonBinary.from(dataPtr.asTypedList(size)),
+        );
+        final updatedDoc = updater(Map<String, dynamic>.from(doc as Map));
+
+        if (updatedDoc == null) {
+          final applyRes = _bindings.albedo_transform_apply(
+            iterator,
+            Pointer<Uint8>.fromAddress(0),
+          );
+          if (applyRes.value > 1) {
+            throw Exception('albedo_transform_apply returned $applyRes');
+          }
+          continue;
+        }
+
+        final updatedBuffer = BsonCodec.serialize(updatedDoc).byteList;
+        final updatedPtr = _bindings.albedo_malloc(updatedBuffer.length);
+        updatedPtr.asTypedList(updatedBuffer.length).setAll(0, updatedBuffer);
+        try {
+          final applyRes = _bindings.albedo_transform_apply(
+            iterator,
+            updatedPtr,
+          );
+          if (applyRes.value > 1) {
+            throw Exception('albedo_transform_apply returned $applyRes');
+          }
+        } finally {
+          _bindings.albedo_free(updatedPtr, updatedBuffer.length);
+        }
+      }
+    } finally {
+      if (iterator.address != 0) {
+        _bindings.albedo_transform_close(iterator);
+      }
+      _bindings.albedo_free(serializedQueryPtr, serializedQuery.length);
+      _bindings.albedo_free(out.cast(), 8);
+      _bindings.albedo_free(outDoc.cast(), 8);
+    }
   }
 }
 
@@ -618,6 +762,39 @@ class Bucket {
     return res;
   }
 
+  /// Runs [body] inside an atomic transaction.
+  ///
+  /// The transaction is committed when [body] returns normally, and rolled
+  /// back if [body] throws. The [Transaction] object must not be used after
+  /// [body] returns.
+  void tx(void Function(Transaction tx) body) {
+    final out = malloc<Pointer<albedo_transaction>>();
+    try {
+      final beginRes = _bindings.albedo_transaction_begin(_handle, out);
+      if (beginRes != albedo_result.ALBEDO_OK) {
+        throw Exception('albedo_transaction_begin returned $beginRes');
+      }
+      final txHandle = out.value;
+      final transaction = Transaction._internal(txHandle);
+      try {
+        body(transaction);
+        transaction._done = true;
+        final commitRes = _bindings.albedo_transaction_commit(txHandle);
+        if (commitRes != albedo_result.ALBEDO_OK) {
+          throw Exception('albedo_transaction_commit returned $commitRes');
+        }
+      } catch (_) {
+        transaction._done = true;
+        _bindings.albedo_transaction_rollback(txHandle);
+        rethrow;
+      } finally {
+        _bindings.albedo_transaction_close(txHandle);
+      }
+    } finally {
+      malloc.free(out);
+    }
+  }
+
   /// Deletes all documents matching [query].
   void delete(Query query) {
     final serializedQuery = BsonCodec.serialize(query.toMap()).byteList;
@@ -678,19 +855,13 @@ class Bucket {
     try {
       while (true) {
         List<ChangeEvent>? events;
-        print('Polling for events with seqno ${sub.seqno}...');
         try {
           events = sub.poll(maxEvents: maxEvents);
-          print('Polled ${events?.length ?? 0} events with seqno ${sub.seqno}');
         } on SubscriptionGapException {
-          print(
-            'Error polling subscription: subscription gap detected, re-subscribing...',
-          );
           sub.close();
           sub = subscribe(query);
           continue;
         } catch (e) {
-          print('Error polling subscription: $e');
           await Future<void>.delayed(pollingTimeout);
           continue;
         }

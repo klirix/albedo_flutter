@@ -39,3 +39,6 @@ build-windows:
     mv zig-out/lib/albedo.lib ../windows/
 
 build: build-android build-ios build-macos
+
+test:
+    ALBEDO_DYLIB_PATH=$(pwd)/macos/Classes/libalbedo.dylib dart test test/

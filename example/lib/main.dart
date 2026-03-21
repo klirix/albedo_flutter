@@ -398,6 +398,24 @@ class _ExampleHomePageState extends State<ExampleHomePage>
                       icon: const Icon(Icons.library_add),
                       label: const Text('Insert 5 Rows'),
                     ),
+                    FilledButton.icon(
+                      onPressed:
+                          _isReady && !_isWorking
+                              ? () => _runAction(
+                                'Tx: inserted 3 rows atomically',
+                                (users) {
+                                  users.tx((tx) {
+                                    for (var i = 0; i < 3; i++) {
+                                      tx.insert(_buildSampleDocument(i));
+                                    }
+                                  });
+                                },
+                                false,
+                              )
+                              : null,
+                      icon: const Icon(Icons.playlist_add),
+                      label: const Text('Tx: Insert 3'),
+                    ),
                     OutlinedButton.icon(
                       onPressed:
                           _isReady && !_isWorking && selectedRecord != null
@@ -424,6 +442,41 @@ class _ExampleHomePageState extends State<ExampleHomePage>
                               : null,
                       icon: const Icon(Icons.edit),
                       label: const Text('Rename Selected'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed:
+                          _isReady && !_isWorking && selectedRecord != null
+                              ? () => _runAction(
+                                'Tx: renamed & incremented selected row',
+                                (users) {
+                                  users.tx((tx) {
+                                    tx.transform(
+                                      where(
+                                        'timestamp',
+                                        eq: selectedRecord.timestamp,
+                                      ),
+                                      (doc) {
+                                        final currentName =
+                                            '${doc['name'] ?? 'user'}';
+                                        final currentValue =
+                                            (doc['value'] as num?)?.toInt() ??
+                                            0;
+                                        return {
+                                          ...doc,
+                                          'name':
+                                              currentName.endsWith('_tx')
+                                                  ? currentName
+                                                  : '${currentName}_tx',
+                                          'value': currentValue + 1,
+                                        };
+                                      },
+                                    );
+                                  });
+                                },
+                              )
+                              : null,
+                      icon: const Icon(Icons.drive_file_rename_outline),
+                      label: const Text('Tx: Rename & Increment'),
                     ),
                     OutlinedButton.icon(
                       onPressed:
