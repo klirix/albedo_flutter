@@ -17,3 +17,5 @@ preamble: |
 comments:
   style: any
   length: full
+
+silence-enum-warning: true
