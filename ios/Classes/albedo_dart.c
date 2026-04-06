@@ -14,9 +14,10 @@ void dummy_function(void) {
     // This function is intentionally left empty.
     // It serves as a placeholder to ensure that the C file is not empty.
     char path[] = "";
-    albedo_bucket *bucket = 0;
+    albedo_bucket_handle *bucket = 0;
     albedo_list_handle *list_handle = 0;
-    albedo_transform_iterator *transform_iterator = 0;
+    albedo_transform_handle *transform_iterator = 0;
+    albedo_replication_cursor_handle *replication_cursor_handle = 0;
     uint8_t *doc = 0;
     uint8_t *cursor = 0;
 
@@ -39,8 +40,22 @@ void dummy_function(void) {
     albedo_transform_apply(transform_iterator, (uint8_t *)0);
     albedo_transform_close(transform_iterator);
 
-    albedo_set_replication_callback(bucket, dummy_callback, bucket);
-    albedo_apply_batch(bucket, (const uint8_t *)0, 0, 0);
+    // albedo_set_replication_callback(bucket, dummy_callback, bucket);
+    // albedo_apply_batch(bucket, (const uint8_t *)0, 0, 0);
+
+    albedo_replication_cursor(bucket, &replication_cursor_handle);
+    albedo_replication_read(
+    bucket,
+    replication_cursor_handle,
+    0,
+    0,
+    0);
+    albedo_replication_apply(
+    bucket,
+    0,
+    0,
+    &replication_cursor_handle);
+    albedo_replication_cursor_close(replication_cursor_handle);
 
     albedo_subscribe(bucket, (uint8_t *)0, &list_handle);
     albedo_subscribe_poll(list_handle, &doc, 0);
