@@ -16,6 +16,7 @@ void dummy_function(void) {
     char path[] = "";
     albedo_bucket_handle *bucket = 0;
     albedo_list_handle *list_handle = 0;
+    albedo_subscription_handle *subscription_handle = 0;
     albedo_transform_handle *transform_iterator = 0;
     albedo_replication_cursor_handle *replication_cursor_handle = 0;
     uint8_t *doc = 0;
@@ -42,6 +43,7 @@ void dummy_function(void) {
 
     // albedo_set_replication_callback(bucket, dummy_callback, bucket);
     // albedo_apply_batch(bucket, (const uint8_t *)0, 0, 0);
+    (void)dummy_callback;
 
     albedo_replication_cursor(bucket, &replication_cursor_handle);
     albedo_replication_read(
@@ -57,10 +59,10 @@ void dummy_function(void) {
     &replication_cursor_handle);
     albedo_replication_cursor_close(replication_cursor_handle);
 
-    albedo_subscribe(bucket, (uint8_t *)0, &list_handle);
-    albedo_subscribe_poll(list_handle, &doc, 0);
-    albedo_subscribe_seqno(list_handle);
-    albedo_subscribe_close(list_handle);
+    albedo_subscribe(bucket, (uint8_t *)0, &subscription_handle);
+    albedo_subscribe_poll(subscription_handle, &doc, 0);
+    albedo_subscribe_seqno(subscription_handle);
+    albedo_subscribe_close(subscription_handle);
 
     albedo_vacuum(bucket);
     albedo_bitsize();

@@ -85,6 +85,12 @@ class Query {
         as Map<String, dynamic>;
   }
 
+  /// Ensures the projection section exists and returns it.
+  Map<String, dynamic> _ensureProjectionSection() {
+    return query.putIfAbsent('projection', () => <String, dynamic>{})
+        as Map<String, dynamic>;
+  }
+
   /// Assigns a single operator/value filter for [field].
   void _setFilter(String field, String operator, dynamic value) {
     final filterSection = _ensureFilterSection();
@@ -180,6 +186,26 @@ class Query {
         ..clear()
         ..['asc'] = asc;
     }
+    return this;
+  }
+
+  /// Keeps only the listed top-level fields in each result document.
+  /// Replaces any previous projection (pick or omit).
+  Query pick(List<String> fields) {
+    assert(fields.isNotEmpty);
+    _ensureProjectionSection()
+      ..clear()
+      ..['pick'] = List<String>.from(fields);
+    return this;
+  }
+
+  /// Drops the listed top-level fields from each result document.
+  /// Replaces any previous projection (pick or omit).
+  Query omit(List<String> fields) {
+    assert(fields.isNotEmpty);
+    _ensureProjectionSection()
+      ..clear()
+      ..['omit'] = List<String>.from(fields);
     return this;
   }
 
