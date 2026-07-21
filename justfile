@@ -1,8 +1,12 @@
 [working-directory: 'albedo']
 build-android:
-    zig build -Dtarget=aarch64-linux-android --release=fast --prefix-lib-dir jniLibs/arm64-v8a
-    zig build -Dtarget=arm-linux-android --release=fast --prefix-lib-dir jniLibs/armeabi-v7a
-    zig build -Dtarget=x86_64-linux-android --release=fast --prefix-lib-dir jniLibs/x86_64
+    #!/usr/bin/env sh
+    set -e
+    : "${ZIG:=zig}"
+    : "${ANDROID_HOME:?Set ANDROID_HOME to your SDK root, e.g. ~/Library/Android/sdk}"
+    "$ZIG" build -Dtarget=aarch64-linux-android -DandroidSDK="$ANDROID_HOME" --release=fast --prefix-lib-dir jniLibs/arm64-v8a
+    "$ZIG" build -Dtarget=arm-linux-android -DandroidSDK="$ANDROID_HOME" --release=fast --prefix-lib-dir jniLibs/armeabi-v7a
+    "$ZIG" build -Dtarget=x86_64-linux-android -DandroidSDK="$ANDROID_HOME" --release=fast --prefix-lib-dir jniLibs/x86_64
     cp -r zig-out/jniLibs ../android/src/main
 
 [working-directory: 'albedo']

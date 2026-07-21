@@ -1,28 +1,21 @@
 PODS:
   - albedo_flutter (0.0.1)
   - FlutterMacOS (1.0.0)
-  - path_provider_foundation (0.0.1):
-    - Flutter
-    - FlutterMacOS
 
 DEPENDENCIES:
   - albedo_flutter (from `Flutter/ephemeral/.symlinks/plugins/albedo_flutter/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
-  - path_provider_foundation (from `Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin`)
 
 EXTERNAL SOURCES:
   albedo_flutter:
     :path: Flutter/ephemeral/.symlinks/plugins/albedo_flutter/macos
   FlutterMacOS:
     :path: Flutter/ephemeral
-  path_provider_foundation:
-    :path: Flutter/ephemeral/.symlinks/plugins/path_provider_foundation/darwin
 
 SPEC CHECKSUMS:
-  albedo_flutter: b0902a1b8eba2be694429d1dc9ceb2ca520eaa7d
+  albedo_flutter: c02aa7d22c4d0010b82e00a1e495059bcbdf40c7
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
 
 PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.17.0
