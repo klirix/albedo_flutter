@@ -36,6 +36,48 @@ void main() {
     expect(bucket.get(where('name', eq: 'nobody')), isNull);
   });
 
+  test(
+    'update expressions support arithmetic, fields, unset, and pipelines',
+    () {
+      bucket.insert({'name': 'Alice', 'score': 10, 'legacy': true});
+
+      final updated = bucket.updateExpression(
+        where('name', eq: 'Alice'),
+        UpdateProgram.pipeline([
+          UpdateProgram.set({
+            'score': UpdateExpression.plus([
+              const UpdateExpression.field('score'),
+              5,
+            ]),
+            'label': UpdateExpression.concat([
+              const UpdateExpression.field('name'),
+              ' updated',
+            ]),
+          }),
+          UpdateProgram.unset('legacy'),
+          UpdateProgram.assign({
+            'status': 'updated',
+            'updated_at': UpdateExpression.now,
+            'fixed_at': UpdateExpression.isoDateTime(
+              '2024-04-22T10:20:30.456Z',
+            ),
+          }),
+        ]),
+      );
+
+      expect(updated, 1);
+      expect(bucket.get(where('name', eq: 'Alice')), {
+        '_id': isNotNull,
+        'name': 'Alice',
+        'score': 15,
+        'label': 'Alice updated',
+        'status': 'updated',
+        'updated_at': isNotNull,
+        'fixed_at': isNotNull,
+      });
+    },
+  );
+
   // ── Transaction: commit ───────────────────────────────────────────────────
 
   group('tx commit', () {
@@ -77,6 +119,27 @@ void main() {
 
       expect(bucket.get(where('name', eq: 'Alice'))?['score'], 15);
       expect(bucket.get(where('name', eq: 'Bob'))?['score'], 20);
+    });
+
+    test('tx update expressions commit atomically', () {
+      bucket.insert({'name': 'Alice', 'score': 10});
+
+      bucket.tx((tx) {
+        expect(
+          tx.updateExpression(
+            Query(),
+            UpdateProgram.set({
+              'score': UpdateExpression.minus([
+                const UpdateExpression.field('score'),
+                3,
+              ]),
+            }),
+          ),
+          1,
+        );
+      });
+
+      expect(bucket.get(Query())?['score'], 7);
     });
 
     test('tx transform returning null deletes the document', () {

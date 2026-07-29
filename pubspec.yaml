@@ -1,6 +1,6 @@
 name: albedo_flutter
 description: "Albedo db bindings."
-version: 0.9.4+1
+version: 0.10.0+1
 
 environment:
   sdk: ^3.7.0

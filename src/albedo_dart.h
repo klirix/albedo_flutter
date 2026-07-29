@@ -53,6 +53,13 @@ albedo_result albedo_insert(albedo_bucket_handle *bucket, uint8_t *doc_buffer);
 albedo_result albedo_transaction_begin(albedo_bucket_handle *bucket, albedo_transaction_handle **out_handle);
 albedo_result albedo_transaction_insert(albedo_transaction_handle *tx, uint8_t *doc_buffer);
 albedo_result albedo_transaction_delete(albedo_transaction_handle *tx, uint8_t *query_buffer, uint16_t query_len);
+albedo_result albedo_transaction_update(
+    albedo_transaction_handle *tx,
+    uint8_t *query_buffer,
+    uint16_t query_len,
+    uint8_t *program_buffer,
+    uint16_t program_len,
+    size_t *out_updated);
 albedo_result albedo_transaction_transform(
     albedo_transaction_handle *tx,
     uint8_t *query_buffer,
@@ -64,6 +71,13 @@ albedo_result albedo_ensure_index(albedo_bucket_handle *bucket, const char *path
 albedo_result albedo_drop_index(albedo_bucket_handle *bucket, const char *path);
 albedo_result albedo_list_indexes(albedo_bucket_handle *bucket, uint8_t **out_doc);
 albedo_result albedo_delete(albedo_bucket_handle *bucket, uint8_t *query_buffer, uint16_t query_len);
+albedo_result albedo_update(
+    albedo_bucket_handle *bucket,
+    uint8_t *query_buffer,
+    uint16_t query_len,
+    uint8_t *program_buffer,
+    uint16_t program_len,
+    size_t *out_updated);
 
 albedo_result albedo_list(albedo_bucket_handle *bucket, uint8_t *query_buffer, albedo_list_handle **out_handle);
 albedo_result albedo_list_cursor_export(albedo_list_handle *handle, uint8_t **out_cursor);

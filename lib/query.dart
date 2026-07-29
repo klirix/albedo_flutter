@@ -2,6 +2,10 @@ part of 'albedo_dart.dart';
 
 /// Deep-clones a BSON-like value so query mutations do not leak across calls.
 dynamic _cloneBsonValue(dynamic value) {
+  if (value is UpdateExpression) {
+    return _cloneBsonValue(value._value);
+  }
+
   if (value is Map) {
     return _cloneBsonDocument(value);
   }
@@ -11,6 +15,63 @@ dynamic _cloneBsonValue(dynamic value) {
   }
 
   return value;
+}
+
+/// An expression evaluated by Albedo while applying an [UpdateProgram].
+class UpdateExpression {
+  const UpdateExpression._(this._value);
+
+  final dynamic _value;
+
+  /// Reads the value at a dotted document [path].
+  const UpdateExpression.field(String path) : this._('\$.$path');
+
+  /// Uses the current BSON datetime.
+  static const now = UpdateExpression._(r'$$now');
+
+  /// Adds two or more numeric [values].
+  factory UpdateExpression.plus(List<dynamic> values) =>
+      UpdateExpression._({r'$plus': values});
+
+  /// Subtracts numeric [values] from left to right.
+  factory UpdateExpression.minus(List<dynamic> values) =>
+      UpdateExpression._({r'$minus': values});
+
+  /// Concatenates one or more string [values].
+  factory UpdateExpression.concat(List<dynamic> values) =>
+      UpdateExpression._({r'$concat': values});
+
+  /// Parses an ISO-8601 string or preserves a BSON datetime [value].
+  factory UpdateExpression.isoDateTime(dynamic value) =>
+      UpdateExpression._({r'$isoDateTime': value});
+}
+
+/// A native update-expression program.
+class UpdateProgram {
+  UpdateProgram.raw(Map<String, dynamic> program)
+    : _program = _cloneBsonDocument(program);
+
+  /// Sets dotted paths to literals or [UpdateExpression] values.
+  factory UpdateProgram.set(Map<String, dynamic> values) =>
+      UpdateProgram.raw({r'$set': values});
+
+  /// Removes one or more dotted [paths].
+  factory UpdateProgram.unset(Object paths) =>
+      UpdateProgram.raw({r'$unset': paths});
+
+  /// Uses direct assignment shorthand for a single update stage.
+  factory UpdateProgram.assign(Map<String, dynamic> values) =>
+      UpdateProgram.raw(values);
+
+  /// Runs [stages] in order, with each stage seeing the prior stage's output.
+  factory UpdateProgram.pipeline(List<UpdateProgram> stages) =>
+      UpdateProgram.raw({
+        for (var i = 0; i < stages.length; i++) '$i': stages[i]._program,
+      });
+
+  final Map<String, dynamic> _program;
+
+  Map<String, dynamic> toMap() => _cloneBsonDocument(_program);
 }
 
 /// Deep-clones a BSON-like document and normalizes keys to strings.
@@ -61,8 +122,9 @@ Query where(
 class Query {
   /// Creates an empty query or clones an existing BSON-like [initial] document.
   Query([Map<String, dynamic>? initial])
-    : query =
-          initial == null ? <String, dynamic>{} : _cloneBsonDocument(initial);
+    : query = initial == null
+          ? <String, dynamic>{}
+          : _cloneBsonDocument(initial);
 
   /// The raw BSON-like query document sent to the native layer.
   final Map<String, dynamic> query;

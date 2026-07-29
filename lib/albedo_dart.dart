@@ -64,6 +64,50 @@ Map<String, dynamic> _queryWithCursor(
   return queryMap;
 }
 
+int _applyUpdateExpression(
+  Query query,
+  UpdateProgram program,
+  albedo_result Function(
+    Pointer<Uint8>,
+    int,
+    Pointer<Uint8>,
+    int,
+    Pointer<Size>,
+  )
+  apply,
+) {
+  final queryBytes = BsonCodec.serialize(query.toMap()).byteList;
+  final programBytes = BsonCodec.serialize(program.toMap()).byteList;
+  if (queryBytes.length > 0xffff || programBytes.length > 0xffff) {
+    throw ArgumentError(
+      'Update query and program must each fit in 65535 bytes',
+    );
+  }
+
+  final queryPtr = malloc<Uint8>(queryBytes.length);
+  final programPtr = malloc<Uint8>(programBytes.length);
+  final outUpdated = malloc<Size>();
+  queryPtr.asTypedList(queryBytes.length).setAll(0, queryBytes);
+  programPtr.asTypedList(programBytes.length).setAll(0, programBytes);
+  try {
+    final result = apply(
+      queryPtr,
+      queryBytes.length,
+      programPtr,
+      programBytes.length,
+      outUpdated,
+    );
+    if (result != albedo_result.ALBEDO_OK) {
+      throw Exception('Albedo update expression returned $result');
+    }
+    return outUpdated.value;
+  } finally {
+    malloc.free(queryPtr);
+    malloc.free(programPtr);
+    malloc.free(outUpdated);
+  }
+}
+
 /// Selects how the underlying bucket file is opened.
 enum BucketOpenMode { readOnly, readWrite }
 
@@ -262,7 +306,7 @@ class Subscription {
 /// is automatically committed on success and rolled back on error.
 /// Do not use this object after the callback returns.
 class Transaction {
-  final Pointer<albedo_transaction> _handle;
+  final Pointer<albedo_transaction_handle> _handle;
   bool _done = false;
 
   Transaction._internal(this._handle);
@@ -309,6 +353,24 @@ class Transaction {
     }
   }
 
+  /// Atomically applies [program] to every document matching [query].
+  int updateExpression(Query query, UpdateProgram program) {
+    _checkDone();
+    return _applyUpdateExpression(
+      query,
+      program,
+      (queryPtr, queryLength, programPtr, programLength, outUpdated) =>
+          _bindings.albedo_transaction_update(
+            _handle,
+            queryPtr,
+            queryLength,
+            programPtr,
+            programLength,
+            outUpdated,
+          ),
+    );
+  }
+
   /// Applies [updater] to each document matching [query] within this transaction.
   ///
   /// Returning `null` from [updater] deletes the current document.
@@ -325,20 +387,20 @@ class Transaction {
 
     final out = _bindings.albedo_malloc(8).cast<Int64>();
     final outDoc = _bindings.albedo_malloc(8).cast<Uint64>();
-    var iterator = Pointer<albedo_transform_iterator>.fromAddress(0);
+    var iterator = Pointer<albedo_transform_handle>.fromAddress(0);
 
     try {
       final transformRes = _bindings.albedo_transaction_transform(
         _handle,
         serializedQueryPtr,
-        out as Pointer<Pointer<albedo_transform_iterator>>,
+        out as Pointer<Pointer<albedo_transform_handle>>,
       );
       if (transformRes.value > 1) {
         throw Exception('albedo_transaction_transform returned $transformRes');
       }
 
       iterator =
-          Pointer.fromAddress(out.value) as Pointer<albedo_transform_iterator>;
+          Pointer.fromAddress(out.value) as Pointer<albedo_transform_handle>;
 
       while (true) {
         final res = _bindings.albedo_transform_data(
@@ -396,7 +458,7 @@ class Transaction {
 
 /// A handle to an open Albedo bucket.
 class Bucket {
-  final Pointer<albedo_bucket> _handle;
+  final Pointer<albedo_bucket_handle> _handle;
   bool _isClosed = false;
 
   Bucket._internal(this._handle);
@@ -420,7 +482,7 @@ class Bucket {
       final openRes = _bindings.albedo_open_with_options(
         pathPtr.cast<Char>(),
         serializedOptionsPtr,
-        out as Pointer<Pointer<albedo_bucket>>,
+        out as Pointer<Pointer<albedo_bucket_handle>>,
       );
 
       if (openRes != albedo_result.ALBEDO_OK) {
@@ -661,13 +723,13 @@ class Bucket {
 
     Pointer<Int64> out = _bindings.albedo_malloc(8).cast();
     Pointer<Uint64> outDoc = _bindings.albedo_malloc(8).cast();
-    Pointer<albedo_transform_iterator> iterator = Pointer.fromAddress(0);
+    Pointer<albedo_transform_handle> iterator = Pointer.fromAddress(0);
 
     try {
       final transformRes = _bindings.albedo_transform(
         _handle,
         serializedQueryPtr,
-        out as Pointer<Pointer<albedo_transform_iterator>>,
+        out as Pointer<Pointer<albedo_transform_handle>>,
       );
 
       if (transformRes.value > 1) {
@@ -675,7 +737,7 @@ class Bucket {
       }
 
       iterator =
-          Pointer.fromAddress(out.value) as Pointer<albedo_transform_iterator>;
+          Pointer.fromAddress(out.value) as Pointer<albedo_transform_handle>;
 
       while (true) {
         final res = _bindings.albedo_transform_data(
@@ -734,6 +796,25 @@ class Bucket {
     }
   }
 
+  /// Atomically applies [program] to every document matching [query].
+  ///
+  /// Returns the number of updated documents.
+  int updateExpression(Query query, UpdateProgram program) {
+    return _applyUpdateExpression(
+      query,
+      program,
+      (queryPtr, queryLength, programPtr, programLength, outUpdated) =>
+          _bindings.albedo_update(
+            _handle,
+            queryPtr,
+            queryLength,
+            programPtr,
+            programLength,
+            outUpdated,
+          ),
+    );
+  }
+
   /// Ensures an index exists at [path].
   albedo_result ensureIndex(
     String path, {
@@ -768,7 +849,7 @@ class Bucket {
   /// back if [body] throws. The [Transaction] object must not be used after
   /// [body] returns.
   void tx(void Function(Transaction tx) body) {
-    final out = malloc<Pointer<albedo_transaction>>();
+    final out = malloc<Pointer<albedo_transaction_handle>>();
     try {
       final beginRes = _bindings.albedo_transaction_begin(_handle, out);
       if (beginRes != albedo_result.ALBEDO_OK) {
