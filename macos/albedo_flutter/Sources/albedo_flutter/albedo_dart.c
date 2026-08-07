@@ -1,6 +1,6 @@
-// Relative import to be able to reuse the C sources.
-// See the comment in ../albedo_dart.podspec for more information.
-#include "../../src/albedo_dart.h"
+// albedo_dart.h is symlinked to ../../../src/albedo_dart.h (the canonical C API).
+// See Package.swift for more information.
+#include "albedo_dart.h"
 
 static uint8_t dummy_callback(void *context, const uint8_t *data, uint32_t data_size, uint32_t page_count) {
     (void)context;

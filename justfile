@@ -43,7 +43,9 @@ build-macos:
     lipo -create -output zig-out/lib/libalbedo.dylib zig-out/lib/arm/libalbedo.dylib zig-out/lib/x86/libalbedo.dylib
     rm -rf zig-out/lib/x86
     rm -rf zig-out/lib/arm
-    mv zig-out/lib/libalbedo.dylib ../macos/Classes/
+    rm -rf ../macos/Frameworks/albedo.xcframework
+    xcodebuild -create-xcframework -library zig-out/lib/libalbedo.dylib -output albedo.xcframework
+    mv albedo.xcframework ../macos/Frameworks/
 
 [working-directory: 'albedo']
 build-linux:
@@ -59,4 +61,4 @@ build-windows:
 build: build-android build-ios build-macos
 
 test:
-    ALBEDO_DYLIB_PATH=$(pwd)/macos/Classes/libalbedo.dylib dart test test/
+    ALBEDO_DYLIB_PATH=$(pwd)/macos/Frameworks/albedo.xcframework/macos-arm64_x86_64/libalbedo.dylib dart test test/

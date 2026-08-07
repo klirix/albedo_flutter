@@ -61,9 +61,9 @@ The native build systems that are invoked by FFI (and method channel) plugins ar
 
 * For Android: Gradle, which invokes the Android NDK for native builds.
   * See the documentation in android/build.gradle.
-* For iOS and MacOS: Xcode, via CocoaPods.
-  * See the documentation in ios/albedo_dart.podspec.
-  * See the documentation in macos/albedo_dart.podspec.
+* For iOS and MacOS: Xcode, via Swift Package Manager (with CocoaPods fallback).
+  * See `ios/albedo_flutter/Package.swift` and `macos/albedo_flutter/Package.swift`.
+  * See `ios/albedo_flutter.podspec` and `macos/albedo_flutter.podspec`.
 * For Linux and Windows: CMake.
   * See the documentation in linux/CMakeLists.txt.
   * See the documentation in windows/CMakeLists.txt.
